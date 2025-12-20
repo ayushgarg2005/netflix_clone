@@ -1,18 +1,28 @@
 import prisma from "../prisma/prismaClient.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
+import { validationResult } from "express-validator";
 
 const JWT_SECRET = process.env.JWT_SECRET || "netflix_secret";
 const COOKIE_OPTIONS = {
   httpOnly: true,
   secure: process.env.NODE_ENV === "production",
   sameSite: "strict",
-  maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+  maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
 };
 
 /* ================= REGISTER ================= */
-export const register = async (req, res) => {
+export const registerUser = async (req, res) => {
   try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid credentials",
+        Errors: errors,
+      });
+    }
+
     const { name, email, password } = req.body;
 
     // Check existing user
@@ -29,13 +39,13 @@ export const register = async (req, res) => {
       data: {
         name,
         email,
-        password: hashedPassword
-      }
+        password: hashedPassword,
+      },
     });
 
     // Generate token
     const token = jwt.sign({ userId: user.id }, JWT_SECRET, {
-      expiresIn: "7d"
+      expiresIn: "7d",
     });
 
     // Set cookie
@@ -47,35 +57,42 @@ export const register = async (req, res) => {
         id: user.id,
         name: user.name,
         email: user.email,
-        subscription: user.subscription
-      }
+        subscription: user.subscription,
+      },
     });
-
   } catch (error) {
     res.status(500).json({ message: "Registration failed", error });
   }
 };
 
 /* ================= LOGIN ================= */
-export const login = async (req, res) => {
+export const loginUser = async (req, res) => {
   try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid credentials",
+        Errors: errors,
+      });
+    }
     const { email, password } = req.body;
 
     // Find user
     const user = await prisma.user.findUnique({ where: { email } });
     if (!user) {
-      return res.status(401).json({ message: "Invalid credentials" });
+      return res.status(401).json({ message: "User does not exist" });
     }
 
     // Compare password
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
-      return res.status(401).json({ message: "Invalid credentials" });
+      return res.status(401).json({ message: "Incorrect password" });
     }
 
     // Generate token
     const token = jwt.sign({ userId: user.id }, JWT_SECRET, {
-      expiresIn: "7d"
+      expiresIn: "7d",
     });
 
     // Set cookie
@@ -87,10 +104,9 @@ export const login = async (req, res) => {
         id: user.id,
         name: user.name,
         email: user.email,
-        subscription: user.subscription
-      }
+        subscription: user.subscription,
+      },
     });
-
   } catch (error) {
     res.status(500).json({ message: "Login failed", error });
   }
