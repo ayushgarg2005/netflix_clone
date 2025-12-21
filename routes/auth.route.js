@@ -9,10 +9,10 @@ router.post(
   "/signup",
   [
     body("email").isEmail().withMessage("Invalid Email"),
-    body("username")
+    body("name")
       .isLength({ min: 5 })
       .withMessage("Username must be atleast 5 characters long"),
-    body("username")
+    body("name")
       .isLength({ max: 20 })
       .withMessage("Username must be atMax 20 characters long"),
     body("password")
@@ -25,12 +25,7 @@ router.post(
 router.post(
   "/login",
   [
-    body("username")
-      .isLength({ min: 5 })
-      .withMessage("Username must be atleast 5 characters long"),
-    body("username")
-      .isLength({ max: 20 })
-      .withMessage("Username must be atMax 20 characters long"),
+    body("email").isEmail().withMessage("Invalid Email"),
     body("password")
       .isLength({ min: 5 })
       .withMessage("Password must be atleast 5 characters long"),

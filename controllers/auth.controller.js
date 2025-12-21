@@ -1,11 +1,13 @@
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { validationResult } from "express-validator";
+import User from "../models/user.model.js";
 
 const JWT_SECRET = process.env.JWT_SECRET || "netflix_secret";
+
 const COOKIE_OPTIONS = {
   httpOnly: true,
-  secure: process.env.NODE_ENV === "production",
+  secure: process.env.NODE_ENV !== "production",
   sameSite: "strict",
   maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
 };
@@ -18,14 +20,14 @@ export const registerUser = async (req, res) => {
       return res.status(400).json({
         success: false,
         message: "Invalid credentials",
-        Errors: errors,
+        errors: errors.array(),
       });
     }
 
     const { name, email, password } = req.body;
 
     // Check existing user
-    const existingUser = await prisma.user.findUnique({ where: { email } });
+    const existingUser = await User.findOne({ email });
     if (existingUser) {
       return res.status(400).json({ message: "Email already registered" });
     }
@@ -34,16 +36,14 @@ export const registerUser = async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     // Create user
-    const user = await prisma.user.create({
-      data: {
-        name,
-        email,
-        password: hashedPassword,
-      },
+    const user = await User.create({
+      name,
+      email,
+      password: hashedPassword,
     });
 
     // Generate token
-    const token = jwt.sign({ userId: user.id }, JWT_SECRET, {
+    const token = jwt.sign({ userId: user._id }, JWT_SECRET, {
       expiresIn: "7d",
     });
 
@@ -53,10 +53,9 @@ export const registerUser = async (req, res) => {
     res.status(201).json({
       message: "User registered successfully",
       user: {
-        id: user.id,
+        id: user._id,
         name: user.name,
         email: user.email,
-        subscription: user.subscription,
       },
     });
   } catch (error) {
@@ -72,13 +71,14 @@ export const loginUser = async (req, res) => {
       return res.status(400).json({
         success: false,
         message: "Invalid credentials",
-        Errors: errors,
+        errors: errors.array(),
       });
     }
+
     const { email, password } = req.body;
 
     // Find user
-    const user = await prisma.user.findUnique({ where: { email } });
+    const user = await User.findOne({ email });
     if (!user) {
       return res.status(401).json({ message: "User does not exist" });
     }
@@ -90,7 +90,7 @@ export const loginUser = async (req, res) => {
     }
 
     // Generate token
-    const token = jwt.sign({ userId: user.id }, JWT_SECRET, {
+    const token = jwt.sign({ userId: user._id }, JWT_SECRET, {
       expiresIn: "7d",
     });
 
@@ -100,10 +100,9 @@ export const loginUser = async (req, res) => {
     res.json({
       message: "Login successful",
       user: {
-        id: user.id,
+        id: user._id,
         name: user.name,
         email: user.email,
-        subscription: user.subscription,
       },
     });
   } catch (error) {
@@ -113,6 +112,7 @@ export const loginUser = async (req, res) => {
 
 /* ================= LOGOUT ================= */
 export const logout = (req, res) => {
-  res.clearCookie("token");
+  res.clearCookie("token", COOKIE_OPTIONS);
+  console.log("Logout successful");
   res.json({ message: "Logged out successfully" });
 };
