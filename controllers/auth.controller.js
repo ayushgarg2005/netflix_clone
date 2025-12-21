@@ -3,14 +3,16 @@ import jwt from "jsonwebtoken";
 import { validationResult } from "express-validator";
 import User from "../models/user.model.js";
 
-const JWT_SECRET = process.env.JWT_SECRET || "netflix_secret";
+const JWT_SECRET = process.env.JWT_SECRET || "netflix_clone";
 
 const COOKIE_OPTIONS = {
   httpOnly: true,
-  secure: process.env.NODE_ENV !== "production",
+  secure: process.env.NODE_ENV === "production", // ✅ FIXED
   sameSite: "strict",
-  maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+  path: "/",                                    // ✅ ADD THIS
+  maxAge: 7 * 24 * 60 * 60 * 1000,
 };
+
 
 /* ================= REGISTER ================= */
 export const registerUser = async (req, res) => {
@@ -112,7 +114,15 @@ export const loginUser = async (req, res) => {
 
 /* ================= LOGOUT ================= */
 export const logout = (req, res) => {
-  res.clearCookie("token", COOKIE_OPTIONS);
-  console.log("Logout successful");
+  console.log("Cookies before logout:", req.cookies);
+
+  res.clearCookie("token", {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "strict",
+    path: "/",          // MUST MATCH
+  });
+
   res.json({ message: "Logged out successfully" });
 };
+
