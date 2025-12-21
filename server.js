@@ -3,6 +3,7 @@ import dotenv from 'dotenv';
 import cors from 'cors';
 import connectDB from './ConnectDB/mongodb.js';
 import authRoutes from './routes/auth.route.js';
+
 dotenv.config();
 connectDB();
 
