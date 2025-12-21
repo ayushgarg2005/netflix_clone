@@ -1,6 +1,6 @@
-import express from "express";
-import { loginUser, registerUser } from "../controllers/auth.controller.js";
-import { body } from "express-validator";
+const express = require("express");
+const { registerUser, loginUser } = require("../controllers/auth.controller");
+const { body } = require("express-validator");
 
 const router = express.Router();
 

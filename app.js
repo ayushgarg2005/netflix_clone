@@ -1,8 +1,8 @@
-import express from "express";
-import cors from "cors";
-import cookieParser from "cookie-parser";
-import authRoutes from "./routes/auth.route.js";
-import dotenv from "dotenv";
+const express = require("express");
+const cors = require("cors");
+const cookieParser = require("cookie-parser");
+const authRoutes = require("./routes/auth.route");
+const dotenv = require("dotenv");
 dotenv.config();
 
 const app = express();
@@ -19,4 +19,4 @@ app.use(
 
 app.use("/api/auth", authRoutes);
 
-export default app;
+module.exports = app;

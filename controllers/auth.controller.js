@@ -1,7 +1,7 @@
-import prisma from "../prisma/prismaClient.js";
-import bcrypt from "bcrypt";
-import jwt from "jsonwebtoken";
-import { validationResult } from "express-validator";
+const { prisma } = require("../prisma/prismaClient");
+const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
+const { validationResult } = require("express-validator");
 
 const JWT_SECRET = process.env.JWT_SECRET || "netflix_secret";
 const COOKIE_OPTIONS = {
@@ -12,7 +12,7 @@ const COOKIE_OPTIONS = {
 };
 
 /* ================= REGISTER ================= */
-export const registerUser = async (req, res) => {
+module.exports.registerUser = async (req, res) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -66,7 +66,7 @@ export const registerUser = async (req, res) => {
 };
 
 /* ================= LOGIN ================= */
-export const loginUser = async (req, res) => {
+module.exports.loginUser = async (req, res) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -113,7 +113,7 @@ export const loginUser = async (req, res) => {
 };
 
 /* ================= LOGOUT ================= */
-export const logout = (req, res) => {
+module.exports.logout = (req, res) => {
   res.clearCookie("token");
   res.json({ message: "Logged out successfully" });
 };
