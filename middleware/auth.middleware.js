@@ -1,4 +1,4 @@
-const jwt = require("jsonwebtoken");
+import jwt from "jsonwebtoken";
 
 const userAuth = async (req, res, next) => {
   const token = req.cookies.token;
@@ -17,4 +17,4 @@ const userAuth = async (req, res, next) => {
   }
 };
 
-module.exports = { userAuth };
+export default userAuth;
