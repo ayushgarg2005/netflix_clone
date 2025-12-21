@@ -2,6 +2,9 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { validationResult } from "express-validator";
 import User from "../models/user.model.js";
+import Otp from "../models/otp.model.js";
+import { generateOtp } from "../Utils/generateOtp.js";
+import { sendOtpEmail } from "../Utils/sendOtpEmail.js";
 
 const JWT_SECRET = process.env.JWT_SECRET || "netflix_clone";
 
@@ -15,55 +18,149 @@ const COOKIE_OPTIONS = {
 
 
 /* ================= REGISTER ================= */
-export const registerUser = async (req, res) => {
-  try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid credentials",
-        errors: errors.array(),
-      });
-    }
+// export const registerUser = async (req, res) => {
+//   try {
+//     const errors = validationResult(req);
+//     if (!errors.isEmpty()) {
+//       return res.status(400).json({
+//         success: false,
+//         message: "Invalid credentials",
+//         errors: errors.array(),
+//       });
+//     }
 
+//     const { name, email, password } = req.body;
+
+//     // Check existing user
+//     const existingUser = await User.findOne({ email });
+//     if (existingUser) {
+//       return res.status(400).json({ message: "Email already registered" });
+//     }
+
+//     // Hash password
+//     const hashedPassword = await bcrypt.hash(password, 10);
+
+//     // Create user
+//     const user = await User.create({
+//       name,
+//       email,
+//       password: hashedPassword,
+//     });
+
+//     // Generate token
+//     const token = jwt.sign({ userId: user._id }, JWT_SECRET, {
+//       expiresIn: "7d",
+//     });
+
+//     // Set cookie
+//     res.cookie("token", token, COOKIE_OPTIONS);
+
+//     res.status(201).json({
+//       message: "User registered successfully",
+//       user: {
+//         id: user._id,
+//         name: user.name,
+//         email: user.email,
+//       },
+//     });
+//   } catch (error) {
+//     res.status(500).json({ message: "Registration failed", error });
+//   }
+// };
+
+
+
+export const sendSignupOtp = async (req, res) => {
+  try {
     const { name, email, password } = req.body;
 
-    // Check existing user
+    // Check if user already exists
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       return res.status(400).json({ message: "Email already registered" });
     }
 
-    // Hash password
+    const otp = generateOtp();
+    const hashedOtp = await bcrypt.hash(otp, 10);
+
+    // Remove previous OTPs
+    await Otp.deleteMany({ email });
+
+    // Store OTP
+    await Otp.create({
+      email,
+      otp: hashedOtp,
+      expiresAt: new Date(Date.now() + 5 * 60 * 1000), // 5 minutes
+    });
+
+    // Send OTP
+    await sendOtpEmail(email, otp);
+
+    res.status(200).json({
+      message: "OTP sent to email",
+    });
+
+  } catch (error) {
+    res.status(500).json({ message: "Failed to send OTP" });
+  }
+};
+
+
+
+
+/* ================= VERIFY SIGNUP OTP ================= */
+export const verifySignupOtp = async (req, res) => {
+  try {
+    const { name, email, password, otp } = req.body;
+
+    const otpRecord = await Otp.findOne({ email });
+    if (!otpRecord) {
+      return res.status(400).json({ message: "OTP not found" });
+    }
+
+    if (otpRecord.expiresAt < new Date()) {
+      return res.status(400).json({ message: "OTP expired" });
+    }
+
+    const isValidOtp = await bcrypt.compare(otp, otpRecord.otp);
+    if (!isValidOtp) {
+      return res.status(400).json({ message: "Invalid OTP" });
+    }
+
+    // Create user after OTP verification
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Create user
     const user = await User.create({
       name,
       email,
       password: hashedPassword,
     });
 
-    // Generate token
-    const token = jwt.sign({ userId: user._id }, JWT_SECRET, {
-      expiresIn: "7d",
-    });
+    await Otp.deleteMany({ email });
 
-    // Set cookie
+    const token = jwt.sign(
+      { userId: user._id },
+      JWT_SECRET,
+      { expiresIn: "7d" }
+    );
+
     res.cookie("token", token, COOKIE_OPTIONS);
 
     res.status(201).json({
-      message: "User registered successfully",
+      message: "Signup successful",
       user: {
         id: user._id,
         name: user.name,
         email: user.email,
       },
     });
+
   } catch (error) {
-    res.status(500).json({ message: "Registration failed", error });
+    res.status(500).json({ message: "OTP verification failed" });
   }
 };
+
+
 
 /* ================= LOGIN ================= */
 export const loginUser = async (req, res) => {
