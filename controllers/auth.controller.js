@@ -82,7 +82,8 @@ export const sendSignupOtp = async (req, res) => {
 
     const otp = generateOtp();
     const hashedOtp = await bcrypt.hash(otp, 10);
-
+    console.log(`Generated OTP for ${email}: ${otp}`);
+    console.log(`Hashed OTP for ${email}: ${hashedOtp}`);
     // Remove previous OTPs
     await Otp.deleteMany({ email });
 
