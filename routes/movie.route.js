@@ -1,6 +1,6 @@
 import express from "express";
 import upload from "../middleware/multer.middleware.js";
-import { uploadMovie } from "../controllers/uploadMovie.controller.js";
+import { uploadMovie, getAllMovies } from "../controllers/uploadMovie.controller.js";
 
 const router = express.Router();
 
@@ -13,4 +13,5 @@ router.post(
   uploadMovie
 );
 
+router.get("/all", getAllMovies);
 export default router;

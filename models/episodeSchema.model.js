@@ -1,3 +1,5 @@
+import mongoose from "mongoose";
+
 const episodeSchema = new mongoose.Schema({
   seasonId: {
     type: mongoose.Schema.Types.ObjectId,

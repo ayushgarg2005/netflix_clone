@@ -1,3 +1,5 @@
+import mongoose from "mongoose";
+
 const recommendationSchema = new mongoose.Schema(
   {
     userId: {
