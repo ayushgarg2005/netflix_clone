@@ -4,11 +4,14 @@ import cors from "cors";
 import cookieParser from "cookie-parser";
 import connectDB from "./ConnectDB/mongodb.js";
 import authRoutes from "./routes/auth.route.js";
+import movieRoutes from "./routes/movie.route.js";
 
 dotenv.config();
 connectDB();
 
 const app = express();
+
+console.log("API Key:", process.env.CLOUDINARY_API_KEY);
 
 /* ================= MIDDLEWARES ================= */
 
@@ -30,6 +33,8 @@ app.use(cookieParser());
 
 // Authorization Routes
 app.use("/api/auth", authRoutes);
+
+app.use("/api/movies", movieRoutes);
 
 /* ================= SERVER ================= */
 
