@@ -224,3 +224,8 @@ export const logout = (req, res) => {
   res.json({ message: "Logged out successfully" });
 };
 
+export const checkAuth = async (req, res) => {
+  res.json({
+    user: req.user,
+  });
+};

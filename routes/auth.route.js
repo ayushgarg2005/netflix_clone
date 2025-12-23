@@ -5,7 +5,8 @@ import {
   sendSignupOtp,
   verifySignupOtp,
   loginUser,
-  logout
+  logout,
+  checkAuth,
 } from "../controllers/auth.controller.js";
 
 import userAuth from "../middleware/auth.middleware.js";
@@ -58,4 +59,6 @@ router.post(
 /* ================= LOGOUT ================= */
 router.post("/logout", userAuth, logout);
 
+/* ================= GET USER INFO ================= */
+router.get("/me", userAuth, checkAuth);
 export default router;

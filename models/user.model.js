@@ -21,20 +21,6 @@ const userSchema = new mongoose.Schema(
       default: "user"
     },
 
-    subscription: {
-      plan: {
-        type: String,
-        enum: ["free", "basic", "standard", "premium"],
-        default: "free"
-      },
-      status: {
-        type: String,
-        enum: ["active", "inactive", "cancelled"],
-        default: "inactive"
-      },
-      expiryDate: Date
-    },
-
     watchHistory: [
       {
         videoId: { type: mongoose.Schema.Types.ObjectId, ref: "Video" },
@@ -45,7 +31,6 @@ const userSchema = new mongoose.Schema(
 
     likedVideos: [{ type: mongoose.Schema.Types.ObjectId, ref: "Video" }],
 
-    isEmailVerified: { type: Boolean, default: false }
   },
   { timestamps: true }
 );
