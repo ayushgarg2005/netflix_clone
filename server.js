@@ -5,8 +5,6 @@ import cookieParser from "cookie-parser";
 import connectDB from "./ConnectDB/mongodb.js";
 import authRoutes from "./routes/auth.route.js";
 import movieRoutes from "./routes/movie.route.js";
-import { Server } from "socket.io";
-import http from "http";
 
 dotenv.config();
 connectDB();
@@ -39,53 +37,6 @@ app.use("/api/auth", authRoutes);
 app.use("/api/movies", movieRoutes);
 
 /* ================= SERVER ================= */
-
-const server = http.createServer(app);
-
-const io = new Server(server, {
-  cors: {
-    origin: "http://localhost:5173",
-    credentials: true,
-  },
-});
-
-const rooms = {}; // in-memory store (later move to Redis)
-
-io.on("connection", (socket) => {
-  console.log("User connected:", socket.id);
-
-  socket.on("join-room", ({ roomId, user }) => {
-    socket.join(roomId);
-
-    if (!rooms[roomId]) {
-      rooms[roomId] = {
-        isPlaying: false,
-        currentTime: 0,
-      };
-    }
-
-    socket.emit("sync-state", rooms[roomId]);
-  });
-
-  socket.on("play", ({ roomId, time }) => {
-    rooms[roomId] = { isPlaying: true, currentTime: time };
-    socket.to(roomId).emit("play", time);
-  });
-
-  socket.on("pause", ({ roomId, time }) => {
-    rooms[roomId] = { isPlaying: false, currentTime: time };
-    socket.to(roomId).emit("pause", time);
-  });
-
-  socket.on("seek", ({ roomId, time }) => {
-    rooms[roomId].currentTime = time;
-    socket.to(roomId).emit("seek", time);
-  });
-
-  socket.on("disconnect", () => {
-    console.log("User disconnected:", socket.id);
-  });
-});
 
 const PORT = process.env.PORT || 5000;
 
