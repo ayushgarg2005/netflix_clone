@@ -5,6 +5,7 @@ import cookieParser from "cookie-parser";
 import connectDB from "./ConnectDB/mongodb.js";
 import authRoutes from "./routes/auth.route.js";
 import movieRoutes from "./routes/movie.route.js";
+import watchProgressRoutes from "./routes/watchProgress.route.js";
 
 dotenv.config();
 connectDB();
@@ -35,6 +36,9 @@ app.use(cookieParser());
 app.use("/api/auth", authRoutes);
 
 app.use("/api/movies", movieRoutes);
+
+
+app.use("/api/progress", watchProgressRoutes);
 
 /* ================= SERVER ================= */
 

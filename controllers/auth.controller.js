@@ -8,73 +8,20 @@ import { sendOtpEmail } from "../Utils/sendOtpEmail.js";
 
 const JWT_SECRET = process.env.JWT_SECRET || "netflix_clone";
 
+/* ================= COOKIE OPTIONS ================= */
 const COOKIE_OPTIONS = {
   httpOnly: true,
-  secure: process.env.NODE_ENV === "production", // ✅ FIXED
+  secure: process.env.NODE_ENV === "production",
   sameSite: "strict",
-  path: "/",                                    // ✅ ADD THIS
-  maxAge: 7 * 24 * 60 * 60 * 1000,
+  path: "/",
+  maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
 };
 
-
-/* ================= REGISTER ================= */
-// export const registerUser = async (req, res) => {
-//   try {
-//     const errors = validationResult(req);
-//     if (!errors.isEmpty()) {
-//       return res.status(400).json({
-//         success: false,
-//         message: "Invalid credentials",
-//         errors: errors.array(),
-//       });
-//     }
-
-//     const { name, email, password } = req.body;
-
-//     // Check existing user
-//     const existingUser = await User.findOne({ email });
-//     if (existingUser) {
-//       return res.status(400).json({ message: "Email already registered" });
-//     }
-
-//     // Hash password
-//     const hashedPassword = await bcrypt.hash(password, 10);
-
-//     // Create user
-//     const user = await User.create({
-//       name,
-//       email,
-//       password: hashedPassword,
-//     });
-
-//     // Generate token
-//     const token = jwt.sign({ userId: user._id }, JWT_SECRET, {
-//       expiresIn: "7d",
-//     });
-
-//     // Set cookie
-//     res.cookie("token", token, COOKIE_OPTIONS);
-
-//     res.status(201).json({
-//       message: "User registered successfully",
-//       user: {
-//         id: user._id,
-//         name: user.name,
-//         email: user.email,
-//       },
-//     });
-//   } catch (error) {
-//     res.status(500).json({ message: "Registration failed", error });
-//   }
-// };
-
-
-
+/* ================= SEND SIGNUP OTP ================= */
 export const sendSignupOtp = async (req, res) => {
   try {
     const { name, email, password } = req.body;
 
-    // Check if user already exists
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       return res.status(400).json({ message: "Email already registered" });
@@ -82,32 +29,22 @@ export const sendSignupOtp = async (req, res) => {
 
     const otp = generateOtp();
     const hashedOtp = await bcrypt.hash(otp, 10);
-    console.log(`Generated OTP for ${email}: ${otp}`);
-    console.log(`Hashed OTP for ${email}: ${hashedOtp}`);
-    // Remove previous OTPs
+
     await Otp.deleteMany({ email });
 
-    // Store OTP
     await Otp.create({
       email,
       otp: hashedOtp,
-      expiresAt: new Date(Date.now() + 5 * 60 * 1000), // 5 minutes
+      expiresAt: new Date(Date.now() + 5 * 60 * 1000),
     });
 
-    // Send OTP
     await sendOtpEmail(email, otp);
 
-    res.status(200).json({
-      message: "OTP sent to email",
-    });
-
+    res.json({ message: "OTP sent to email" });
   } catch (error) {
     res.status(500).json({ message: "Failed to send OTP" });
   }
 };
-
-
-
 
 /* ================= VERIFY SIGNUP OTP ================= */
 export const verifySignupOtp = async (req, res) => {
@@ -128,7 +65,6 @@ export const verifySignupOtp = async (req, res) => {
       return res.status(400).json({ message: "Invalid OTP" });
     }
 
-    // Create user after OTP verification
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const user = await User.create({
@@ -139,8 +75,12 @@ export const verifySignupOtp = async (req, res) => {
 
     await Otp.deleteMany({ email });
 
+    /* ✅ FIXED JWT PAYLOAD */
     const token = jwt.sign(
-      { userId: user._id },
+      {
+        id: user._id,          // ✅ IMPORTANT
+        email: user.email,
+      },
       JWT_SECRET,
       { expiresIn: "7d" }
     );
@@ -155,13 +95,10 @@ export const verifySignupOtp = async (req, res) => {
         email: user.email,
       },
     });
-
   } catch (error) {
     res.status(500).json({ message: "OTP verification failed" });
   }
 };
-
-
 
 /* ================= LOGIN ================= */
 export const loginUser = async (req, res) => {
@@ -177,24 +114,26 @@ export const loginUser = async (req, res) => {
 
     const { email, password } = req.body;
 
-    // Find user
     const user = await User.findOne({ email });
     if (!user) {
       return res.status(401).json({ message: "User does not exist" });
     }
 
-    // Compare password
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
       return res.status(401).json({ message: "Incorrect password" });
     }
 
-    // Generate token
-    const token = jwt.sign({ userId: user._id }, JWT_SECRET, {
-      expiresIn: "7d",
-    });
+    /* ✅ FIXED JWT PAYLOAD */
+    const token = jwt.sign(
+      {
+        id: user._id,          // ✅ IMPORTANT
+        email: user.email,
+      },
+      JWT_SECRET,
+      { expiresIn: "7d" }
+    );
 
-    // Set cookie
     res.cookie("token", token, COOKIE_OPTIONS);
 
     res.json({
@@ -206,26 +145,23 @@ export const loginUser = async (req, res) => {
       },
     });
   } catch (error) {
-    res.status(500).json({ message: "Login failed", error });
+    res.status(500).json({ message: "Login failed" });
   }
 };
 
 /* ================= LOGOUT ================= */
 export const logout = (req, res) => {
-  console.log("Cookies before logout:", req.cookies);
-
   res.clearCookie("token", {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "strict",
-    path: "/",          // MUST MATCH
+    path: "/",
   });
 
   res.json({ message: "Logged out successfully" });
 };
 
-export const checkAuth = async (req, res) => {
-  res.json({
-    user: req.user,
-  });
+/* ================= CHECK AUTH ================= */
+export const checkAuth = (req, res) => {
+  res.json({ user: req.user });
 };

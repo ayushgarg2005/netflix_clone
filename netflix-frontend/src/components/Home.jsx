@@ -1,84 +1,144 @@
 import { useEffect, useMemo, useState } from "react";
+import { motion } from "framer-motion";
 import Navbar from "../components/Navbar";
 import HeroBanner from "../components/HeroBanner";
 import MovieCard from "../components/MovieCard";
 
 const Home = () => {
-  const [movies, setMovies] = useState([]);
+  const [videos, setVideos] = useState([]);
+  const [continueWatching, setContinueWatching] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchMovies = async () => {
+    const fetchData = async () => {
       try {
-        const res = await fetch("http://localhost:5000/api/movies/all", {
-          credentials: "include",
-        });
-        const data = await res.json();
-        setMovies(data);
+        const [videoRes, progressRes] = await Promise.all([
+          fetch("http://localhost:5000/api/movies/all", { credentials: "include" }),
+          fetch("http://localhost:5000/api/progress/continue-watching", { credentials: "include" })
+        ]);
+
+        const videoData = await videoRes.json();
+        const progressData = await progressRes.json();
+
+        setVideos(Array.isArray(videoData) ? videoData : []);
+        setContinueWatching(Array.isArray(progressData) ? progressData : []);
       } catch (error) {
-        console.error("Failed to fetch movies", error);
+        console.error("Fetch error:", error);
       } finally {
         setLoading(false);
       }
     };
-    fetchMovies();
+    fetchData();
   }, []);
 
   const featuredMovie = useMemo(() => {
-    if (!movies.length) return null;
-    return movies.find((m) => !m.isPremium) || movies[0];
-  }, [movies]);
+    if (!videos.length) return null;
+    // Prioritize non-premium content for the banner
+    return videos.find((m) => !m.isPremium) || videos[0];
+  }, [videos]);
 
-  const gridMovies = useMemo(() => movies, [movies]);
+  // Animation Variants
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: { staggerChildren: 0.1 }
+    }
+  };
+
+  const itemVariants = {
+    hidden: { y: 20, opacity: 0 },
+    visible: { y: 0, opacity: 1 }
+  };
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#141414] flex flex-col items-center justify-center">
-        <div className="w-12 h-12 border-4 border-neutral-800 border-t-[#e50914] rounded-full animate-spin shadow-lg" />
+      <div className="min-h-screen bg-[#141414] flex items-center justify-center">
+        <div className="w-16 h-16 border-4 border-white/5 border-t-[#e50914] rounded-full animate-spin" />
       </div>
     );
   }
 
   return (
-    <div className="bg-[#141414] min-h-screen text-white overflow-x-hidden selection:bg-[#e50914]">
+    <div className="bg-[#141414] min-h-screen text-white overflow-x-hidden selection:bg-[#e50914] selection:text-white">
       <Navbar />
 
       {/* HERO SECTION */}
-      <section className="relative h-[60vh] md:h-[65vh] w-full">
+      <section className="relative h-[75vh] md:h-[85vh] lg:h-[95vh] w-full">
         <HeroBanner movie={featuredMovie} />
+        {/* Cinematic Blend Overlay */}
+        <div className="absolute bottom-0 left-0 w-full h-48 bg-gradient-to-t from-[#141414] via-[#141414]/60 to-transparent z-10" />
       </section>
 
-      {/* MAIN CONTENT 
-          Changed -mt to pt (padding-top) to move the section down.
-          pt-4 to pt-8 gives it a modern, spacious feel.
-      */}
-      
-      <main className="relative z-20 px-6 md:px-14 pb-20 pt-4 md:pt-8 lg:pt-12">
-        <section className="space-y-8">
-          
-          {/* Row Header */}
-          <div className="flex items-end justify-between border-b border-white/5 pb-3">
-            <div className="space-y-1">
-              <h2 className="text-xl md:text-2xl font-black tracking-tighter">
-                Trending <span className="text-[#e50914]">Now</span>
-              </h2>
-              <div className="h-1 w-10 bg-[#e50914] rounded-full" />
+      {/* MAIN CONTENT AREA */}
+      <main className="relative z-20 px-6 md:px-14 pb-20 -mt-24 md:-mt-32 space-y-16">
+        
+        {/* CONTINUE WATCHING SECTION */}
+        {continueWatching.length > 0 && (
+          <motion.section 
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+            variants={containerVariants}
+            className="space-y-6"
+          >
+            <div className="flex items-end justify-between">
+              <div className="space-y-1">
+                <span className="text-[#e50914] text-xs font-black uppercase tracking-[0.3em]">Resume</span>
+                <h2 className="text-xl md:text-2xl font-bold tracking-tighter">Continue Watching</h2>
+              </div>
             </div>
-            <button className="text-[10px] font-black uppercase tracking-widest text-gray-500 hover:text-white transition-colors">
-              Browse All
-            </button>
+            
+            <div className="flex gap-5 overflow-x-auto pb-6 scrollbar-hide snap-x">
+              {continueWatching.map((item) => (
+                <motion.div 
+                  variants={itemVariants}
+                  key={item._id} 
+                  className="flex-shrink-0 w-44 sm:w-52 md:w-64 lg:w-72 snap-start"
+                >
+                  <MovieCard
+                    movie={item.videoId} 
+                    progress={item.progress}
+                    showProgress={true}
+                  />
+                </motion.div>
+              ))}
+            </div>
+          </motion.section>
+        )}
+
+        {/* TRENDING SECTION */}
+        <motion.section 
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, margin: "-100px" }}
+          variants={containerVariants}
+          className="space-y-8"
+        >
+          <div className="flex items-end justify-between border-b border-white/10 pb-4">
+             <div className="space-y-1">
+                <span className="text-gray-500 text-xs font-black uppercase tracking-[0.3em]">Popular</span>
+                <h2 className="text-xl md:text-2xl font-bold tracking-tighter">Trending Now</h2>
+             </div>
+             <button className="text-[10px] font-bold uppercase tracking-widest text-gray-400 hover:text-[#e50914] transition-colors">
+               Explore All
+             </button>
           </div>
 
-          {/* Grid Layout */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-x-4 gap-y-10">
-            {gridMovies.map((movie) => (
-              <MovieCard key={movie._id} movie={movie} />
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-x-5 gap-y-12">
+            {videos.map((v) => (
+              <motion.div variants={itemVariants} key={v._id}>
+                <MovieCard movie={v} />
+              </motion.div>
             ))}
           </div>
-        </section>
+        </motion.section>
       </main>
 
-      <div className="h-24 bg-gradient-to-t from-black to-transparent opacity-40" />
+      {/* FOOTER SPACER */}
+      <footer className="py-10 text-center border-t border-white/5 opacity-30 text-[10px] uppercase tracking-[0.5em]">
+        &copy; {new Date().getFullYear()} YourStreamingService. All Rights Reserved.
+      </footer>
     </div>
   );
 };
