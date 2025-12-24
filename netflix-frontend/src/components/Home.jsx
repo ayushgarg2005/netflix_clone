@@ -65,13 +65,13 @@ const Home = () => {
 
       {/* HERO SECTION */}
       <section className="relative h-[75vh] md:h-[85vh] lg:h-[95vh] w-full">
-        <HeroBanner movie={featuredMovie} />
+        <HeroBanner movies={videos.slice(0, 5)} />
         {/* Cinematic Blend Overlay */}
         <div className="absolute bottom-0 left-0 w-full h-48 bg-gradient-to-t from-[#141414] via-[#141414]/60 to-transparent z-10" />
       </section>
 
       {/* MAIN CONTENT AREA */}
-      <main className="relative z-20 px-6 md:px-14 pb-20 -mt-24 md:-mt-32 space-y-16">
+      <main className="relative z-20 px-6 md:px-14 pb-20 -mt-24 md:-mt-32 space-y-8">
         
         {/* CONTINUE WATCHING SECTION */}
         {continueWatching.length > 0 && (

@@ -4,6 +4,7 @@ const videoSchema = new mongoose.Schema(
   {
     // BASIC INFO
     title: { type: String, required: true },
+
     description: String,
 
     // MEDIA
@@ -33,6 +34,7 @@ const videoSchema = new mongoose.Schema(
 
     // VIDEO META
     duration: Number, // minutes
+    
     releaseDate: Date,
 
     quality: {
