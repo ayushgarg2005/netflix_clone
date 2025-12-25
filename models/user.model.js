@@ -30,7 +30,7 @@ const userSchema = new mongoose.Schema(
     ],
 
     likedVideos: [{ type: mongoose.Schema.Types.ObjectId, ref: "Video" }],
-
+    tasteProfile: { type: [Number], default: [] }
   },
   { timestamps: true }
 );
