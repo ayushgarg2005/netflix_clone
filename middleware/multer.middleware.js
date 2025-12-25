@@ -26,12 +26,12 @@ const fileFilter = (req, file, cb) => {
     }
   }
 
-  if (file.fieldname === "thumbnail") {
+  if (file.fieldname === "thumbnail" || file.fieldname === "banner") {
     const allowedImages = ["image/jpeg", "image/png", "image/webp"];
     if (allowedImages.includes(file.mimetype)) {
       cb(null, true);
     } else {
-      cb(new Error("Invalid thumbnail format"), false);
+      cb(new Error("Invalid thumbnail or banner format"), false);
     }
   }
 };

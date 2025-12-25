@@ -9,6 +9,7 @@ router.post(
   upload.fields([
     { name: "video", maxCount: 1 },
     { name: "thumbnail", maxCount: 1 },
+    { name: "banner", maxCount: 1 }
   ]),
   uploadMovie
 );

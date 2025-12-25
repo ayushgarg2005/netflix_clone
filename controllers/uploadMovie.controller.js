@@ -5,14 +5,15 @@ import Video from "../models/video.model.js";
 export const uploadMovie = async (req, res) => {
   let videoPath;
   let thumbnailPath;
+  let bannerPath;
 
   try {
     const { title, description, genre, releaseYear, type } = req.body;
 
     // ✅ Validate files
-    if (!req.files?.video || !req.files?.thumbnail) {
+    if (!req.files?.video || !req.files?.thumbnail || !req.files?.banner) {
       return res.status(400).json({
-        message: "Video and thumbnail both are required",
+        message: "Video, thumbnail, and banner are all required",
       });
     }
 
@@ -25,6 +26,7 @@ export const uploadMovie = async (req, res) => {
 
     videoPath = req.files.video[0].path;
     thumbnailPath = req.files.thumbnail[0].path;
+    bannerPath = req.files.banner[0].path;
 
     // ✅ Upload video to Cloudinary
     const videoUpload = await cloudinary.uploader.upload(videoPath, {
@@ -38,6 +40,11 @@ export const uploadMovie = async (req, res) => {
       folder: "netflix/thumbnails",
     });
 
+    // ✅ Upload banner
+    const bannerUpload = await cloudinary.uploader.upload(bannerPath, {
+      folder: "netflix/banners",
+    });
+
     // ✅ Save to MongoDB
     const movie = await Video.create({
       title,
@@ -46,6 +53,7 @@ export const uploadMovie = async (req, res) => {
       releaseDate: releaseYear ? new Date(releaseYear) : undefined,
       videoUrl: videoUpload.secure_url,
       thumbnailUrl: thumbnailUpload.secure_url,
+      bannerUrl: bannerUpload.secure_url,
       duration: Math.round(videoUpload.duration / 60), // minutes
       type: type || "movie",
     });
@@ -67,6 +75,9 @@ export const uploadMovie = async (req, res) => {
     }
     if (thumbnailPath && fs.existsSync(thumbnailPath)) {
       fs.unlinkSync(thumbnailPath);
+    }
+    if (bannerPath && fs.existsSync(bannerPath)) {
+      fs.unlinkSync(bannerPath);
     }
   }
 };
