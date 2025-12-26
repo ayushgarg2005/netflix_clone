@@ -19,7 +19,7 @@ const videoSchema = new mongoose.Schema(
       required: true,
     },
 
-    genres: {
+    genre: {
       type: [String],
       default: [],
     },
@@ -33,7 +33,7 @@ const videoSchema = new mongoose.Schema(
     },
 
     // VIDEO META
-    duration: Number, // minutes
+    duration: Number, // seconds
     
     releaseDate: Date,
 
@@ -59,7 +59,14 @@ const videoSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
-    embedding: { type: [Number], default: [] } 
+
+    // ... existing schema ...
+    embedding: { 
+        type: [Number], // The AI embedding
+        select: false   // Don't fetch this unless we explicitly ask (it's heavy)
+    },
+    // ...
+
   },
   { timestamps: true }
 );
