@@ -9,11 +9,13 @@ import Watch from "./components/Watch";
 import MovieDetails from "./components/MovieDetails";
 import Profile from "./components/Profile";
 import Account from "./components/Account";
+import LandingPage from "./components/LandingPage";
 function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
         <Routes>
+          <Route path="/" element={<LandingPage />} />
           <Route path="/signup" element={<Signup />} />
           <Route path="/verify-otp" element={<VerifyOtp />} />
           <Route path="/signin" element={<Signin />} />
