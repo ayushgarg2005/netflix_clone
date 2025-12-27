@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { ChevronDown } from "lucide-react";
 
 import Logo from "./Logo";
@@ -9,41 +9,35 @@ import ProfileDropdown from "./ProfileDropdown";
 import MobileMenu from "./MobileMenu";
 
 const Navbar = () => {
-  const [isScrolled, setIsScrolled] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  useEffect(() => {
-    const onScroll = () => setIsScrolled(window.scrollY > 20);
-    window.addEventListener("scroll", onScroll);
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
-
   return (
-    <header
-      className={`fixed top-0 w-full z-50 transition-all
-        ${
-          isScrolled
-            ? "bg-[#141414]/95 backdrop-blur-md py-3"
-            : "bg-gradient-to-b from-black/90 to-transparent py-5"
-        }`}
-    >
-      <div className="flex justify-between items-center px-6 md:px-12">
+    <header className="fixed top-0 w-full z-50 bg-[#001E2B] border-b border-white/5 py-4 shadow-lg shadow-black/20">
+      <div className="container mx-auto flex justify-between items-center px-6 md:px-12">
+        
+        {/* LEFT: Logo & Navigation */}
         <div className="flex items-center gap-10">
           <Logo />
           <DesktopNav />
 
+          {/* Mobile "Browse" Trigger */}
           <button
-            className="lg:hidden text-white flex items-center gap-1"
+            className="lg:hidden text-slate-300 hover:text-[#00ED64] flex items-center gap-1.5 transition-colors font-semibold text-sm"
             onClick={() => setMobileOpen(!mobileOpen)}
           >
-            Browse
-            <ChevronDown size={14} />
+            <span>Browse</span>
+            <ChevronDown size={14} className={`transition-transform duration-300 ${mobileOpen ? "rotate-180" : ""}`} />
           </button>
         </div>
 
+        {/* RIGHT: Utilities */}
         <div className="flex items-center gap-6">
           <SearchBar open={searchOpen} setOpen={setSearchOpen} />
+          
+          {/* Vertical Divider */}
+          <div className="w-px h-6 bg-slate-700/50 hidden md:block" /> 
+          
           <NotificationBell />
           <ProfileDropdown />
         </div>

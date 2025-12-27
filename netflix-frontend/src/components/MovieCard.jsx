@@ -1,4 +1,4 @@
-import { Play, Star, Plus, ThumbsUp } from "lucide-react";
+import { Play, Star, Plus, ThumbsUp, Clock, Calendar } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 
@@ -7,126 +7,112 @@ const MovieCard = ({ movie, progress = 0, showProgress = false }) => {
 
   if (!movie) return null;
 
-  // Unit Consistency: Convert movie.duration (minutes) to seconds to match progress
+  // SAFEGUARD: Default to 0 if rating is missing
+  const rating = movie.rating || 0; 
+
+  // Duration Logic
   const durationInSeconds = (movie.duration || 0) * 60;
   const progressPercent = showProgress && durationInSeconds > 0
     ? Math.min((progress / durationInSeconds) * 100, 100) 
     : 0;
-
-  // Logic for a "Match" score based on rating (e.g., 8.5 rating = 85% match)
-  const matchScore = movie.rating ? Math.round(movie.rating * 10) : null;
 
   return (
     <motion.div
       layout
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
-      whileHover={{ y: -8 }}
-      transition={{ duration: 0.3, ease: "easeOut" }}
-      className="group relative flex flex-col cursor-pointer"
+      whileHover={{ y: -5 }}
+      transition={{ duration: 0.2, ease: "easeOut" }}
+      className="group relative flex flex-col cursor-pointer bg-[#021019] rounded-xl overflow-hidden border border-white/5 hover:border-[#00ED64]/50 transition-colors duration-300 shadow-lg"
       onClick={() => navigate(`/watch/${movie._id}`)}
     >
       {/* IMAGE CONTAINER */}
-      <div className="relative aspect-video w-full overflow-hidden rounded-lg bg-[#1c1c1c] shadow-md transition-shadow duration-300 group-hover:shadow-[0_20px_40px_rgba(0,0,0,0.6)]">
+      <div className="relative aspect-video w-full overflow-hidden bg-[#001E2B]">
         
         {/* THUMBNAIL */}
         <img
-          src={movie.thumbnailUrl}
+          src={movie.thumbnailUrl || "https://via.placeholder.com/640x360?text=No+Image"}
           alt={movie.title}
-          className="w-full h-full object-cover transition-transform duration-700 ease-in-out group-hover:scale-110"
+          className="w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-105 opacity-90 group-hover:opacity-100"
           loading="lazy"
         />
 
-        {/* HOVER OVERLAY: Deeper gradient for button visibility */}
-        <div className="absolute inset-0 bg-gradient-to-t from-[#141414] via-black/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-
-        {/* TOP BADGES: Modern Glassmorphism */}
-        <div className="absolute top-2 left-2 flex gap-1.5 opacity-0 group-hover:opacity-100 transition-all duration-300 -translate-y-2 group-hover:translate-y-0">
-          <span className="bg-white/10 backdrop-blur-md text-white text-[9px] px-2 py-0.5 rounded-sm font-black uppercase tracking-widest border border-white/20">
-            {movie.type}
-          </span>
-          <span className="bg-black/40 backdrop-blur-md text-white text-[9px] px-2 py-0.5 rounded-sm border border-white/10 font-bold">
-            {movie.quality}
-          </span>
-        </div>
-
-        {/* CENTER PLAY BUTTON: Glow effect on hover */}
-        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 scale-50 group-hover:scale-100">
-          <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-[0_0_20px_rgba(255,255,255,0.4)]">
-            <Play size={24} fill="black" stroke="black" className="ml-1" />
-          </div>
-        </div>
-
-        {/* BOTTOM ACTIONS */}
-        <div className="absolute bottom-2 left-2 right-2 flex justify-between items-center opacity-0 group-hover:opacity-100 transition-all duration-300 translate-y-2 group-hover:translate-y-0">
-          <div className="flex gap-2">
-            <motion.button 
-              whileHover={{ scale: 1.1, backgroundColor: "rgba(255,255,255,1)", color: "black" }}
-              whileTap={{ scale: 0.9 }}
-              className="p-1.5 bg-[#2a2a2a]/90 text-white rounded-full border border-white/10 backdrop-blur-sm transition-colors"
-              onClick={(e) => e.stopPropagation()}
+        {/* HOVER OVERLAY */}
+        <div className="absolute inset-0 bg-[#001E2B]/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center backdrop-blur-[2px]">
+            {/* CENTER PLAY BUTTON */}
+            <motion.div 
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.95 }}
+                className="w-12 h-12 bg-[#00ED64] rounded-full flex items-center justify-center text-[#001E2B] shadow-[0_0_20px_rgba(0,237,100,0.4)]"
             >
-              <Plus size={14} />
-            </motion.button>
-            <motion.button 
-              whileHover={{ scale: 1.1, backgroundColor: "rgba(255,255,255,1)", color: "black" }}
-              whileTap={{ scale: 0.9 }}
-              className="p-1.5 bg-[#2a2a2a]/90 text-white rounded-full border border-white/10 backdrop-blur-sm transition-colors"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <ThumbsUp size={14} />
-            </motion.button>
-          </div>
-          <span className="text-[10px] text-white/90 font-bold bg-black/40 backdrop-blur-sm border border-white/20 px-1.5 py-0.5 rounded-sm uppercase">
-            {movie.ageRestriction}
+                <Play size={20} fill="currentColor" className="ml-1" />
+            </motion.div>
+        </div>
+
+        {/* ABSOLUTE BADGES */}
+        <div className="absolute top-2 left-2 flex gap-1.5 translate-y-[-10px] opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300">
+          <span className="bg-[#001E2B]/90 text-[#00ED64] text-[10px] font-bold px-2 py-0.5 rounded border border-[#00ED64]/20 backdrop-blur-md uppercase tracking-wide">
+            {movie.quality || "HD"}
           </span>
         </div>
 
-        {/* 🔥 PROGRESS BAR: Cinematic Neon Glow */}
+        {/* PROGRESS BAR: Spring Green Glow */}
         {showProgress && (
-          <div className="absolute bottom-0 left-0 w-full h-[3.5px] bg-white/20">
+          <div className="absolute bottom-0 left-0 w-full h-[3px] bg-[#001E2B]">
             <motion.div
               initial={{ width: 0 }}
               animate={{ width: `${progressPercent}%` }}
-              className="h-full bg-[#e50914] shadow-[0_0_12px_rgba(229,9,20,0.8)]"
-              transition={{ duration: 1, ease: "easeOut" }}
+              className="h-full bg-[#00ED64] shadow-[0_0_8px_rgba(0,237,100,0.8)]"
+              transition={{ duration: 0.5, ease: "easeOut" }}
             />
           </div>
         )}
       </div>
 
-      {/* METADATA: Clean Typography */}
-      <div className="mt-3 px-1">
-        <div className="flex items-center justify-between gap-2 mb-1">
-          <h3 className="text-sm font-bold text-gray-100 truncate flex-1 tracking-tight">
+      {/* METADATA: Clean Tech Look */}
+      <div className="p-3 bg-[#021019]">
+        <div className="flex items-start justify-between gap-2 mb-1.5">
+          <h3 className="text-sm font-bold text-white group-hover:text-[#00ED64] transition-colors truncate leading-tight">
             {movie.title}
           </h3>
-          {matchScore && (
-             <span className="text-[#46d369] text-[11px] font-black tracking-tight">
-               {matchScore}% Match
-             </span>
-          )}
+          <div className="flex items-center gap-1 shrink-0 bg-[#00ED64]/10 px-1.5 py-0.5 rounded">
+            <Star size={10} className="text-[#00ED64]" fill="currentColor" />
+            {/* ✅ FIX: Used the safe 'rating' variable defined at top */}
+            <span className="text-[10px] font-bold text-[#00ED64]">{rating.toFixed(1)}</span>
+          </div>
         </div>
 
-        <div className="flex items-center gap-2 text-[11px] font-medium text-gray-500">
-          <span className="text-gray-300">{movie.duration}m</span>
-          <span className="w-1 h-1 bg-gray-700 rounded-full" />
-          <div className="flex gap-1 truncate">
-            {movie.genres?.slice(0, 2).map((genre, i) => (
-              <span key={genre}>
-                {genre}{i < 1 && movie.genres.length > 1 ? "," : ""}
-              </span>
-            ))}
-          </div>
-          {movie.rating > 0 && (
-            <>
-              <span className="w-1 h-1 bg-gray-700 rounded-full" />
-              <div className="flex items-center gap-1">
-                <Star size={10} fill="#f5c518" stroke="none" />
-                <span className="text-gray-300">{movie.rating.toFixed(1)}</span>
-              </div>
-            </>
-          )}
+        <div className="flex items-center gap-3 text-[11px] font-medium text-slate-400">
+            <span className="flex items-center gap-1">
+                <Clock size={10} />
+                {movie.duration || 0}m
+            </span>
+            <span className="w-0.5 h-3 bg-slate-700 rounded-full" />
+            <span className="truncate max-w-[80px]">
+                {movie.genres?.[0] || "General"}
+            </span>
+            <span className="w-0.5 h-3 bg-slate-700 rounded-full" />
+            <span className="text-slate-500 border border-slate-700 px-1 rounded-[2px] leading-none py-[1px]">
+                {movie.ageRestriction || "13"}+
+            </span>
+        </div>
+
+        {/* HOVER ACTIONS (Hidden by default, slide up) */}
+        <div className="h-0 group-hover:h-8 overflow-hidden transition-all duration-300 ease-in-out">
+            <div className="flex items-center gap-2 pt-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300 delay-100">
+                <button 
+                    onClick={(e) => e.stopPropagation()}
+                    className="flex-1 flex items-center justify-center gap-1.5 bg-slate-800 hover:bg-[#00ED64] hover:text-[#001E2B] text-slate-200 text-[10px] font-bold py-1.5 rounded transition-colors"
+                >
+                    <Plus size={12} /> List
+                </button>
+                <button 
+                    onClick={(e) => e.stopPropagation()}
+                    className="flex-1 flex items-center justify-center gap-1.5 bg-slate-800 hover:bg-[#00ED64] hover:text-[#001E2B] text-slate-200 text-[10px] font-bold py-1.5 rounded transition-colors"
+                >
+                    <ThumbsUp size={12} /> Like
+                </button>
+            </div>
         </div>
       </div>
     </motion.div>

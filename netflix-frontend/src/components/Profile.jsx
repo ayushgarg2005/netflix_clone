@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { User, Mail, Shield, History, Heart, Calendar } from "lucide-react";
+import { User, Mail, Shield, History, Heart, Calendar, Edit2, CheckCircle, Activity } from "lucide-react";
 import Navbar from "../components/Navbar";
 
 const Profile = () => {
@@ -26,109 +26,139 @@ const Profile = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#141414] flex items-center justify-center">
-        <div className="w-12 h-12 border-4 border-white/10 border-t-[#e50914] rounded-full animate-spin" />
+      <div className="min-h-screen bg-[#001E2B] flex items-center justify-center">
+        <div className="w-12 h-12 border-4 border-[#001E2B] border-t-[#00ED64] rounded-full animate-spin shadow-[0_0_20px_rgba(0,237,100,0.2)]" />
       </div>
     );
   }
 
-  // Fallback for avatar from schema
+  // Fallback for avatar
   const profileImage = user?.avatar || "https://upload.wikimedia.org/wikipedia/commons/0/0b/Netflix-avatar.png";
 
   return (
-    <div className="min-h-screen bg-[#141414] text-white">
+    <div className="min-h-screen bg-[#001E2B] text-slate-100 font-sans selection:bg-[#00ED64] selection:text-[#001E2B]">
       <Navbar />
 
-      <main className="max-w-4xl mx-auto pt-32 px-6 pb-20">
+      {/* Background Decor */}
+      <div className="fixed inset-0 pointer-events-none z-0">
+         <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-[#00ED64]/5 rounded-full blur-[100px]" />
+      </div>
+
+      <main className="relative z-10 max-w-5xl mx-auto pt-32 px-6 pb-20">
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
           className="space-y-12"
         >
           {/* 1. IDENTITY HEADER */}
-          <section className="flex flex-col md:flex-row items-center gap-8 border-b border-white/10 pb-10">
-            <div className="relative">
+          <section className="flex flex-col md:flex-row items-center gap-8 border-b border-slate-700/50 pb-12">
+            <div className="relative group">
+              <div className="absolute inset-0 bg-[#00ED64] rounded-full blur-md opacity-20 group-hover:opacity-40 transition-opacity" />
               <img 
                 src={profileImage} 
                 alt={user?.name} 
-                className="w-32 h-32 rounded-lg object-cover ring-4 ring-white/5 shadow-2xl"
+                className="relative w-32 h-32 rounded-full object-cover border-4 border-[#001E2B] ring-2 ring-[#00ED64]/50 shadow-2xl"
               />
               {user?.role === "admin" && (
-                <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 bg-[#e50914] text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-tighter">
+                <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-[#00ED64] text-[#001E2B] text-[10px] font-extrabold px-3 py-1 rounded-full uppercase tracking-wider shadow-lg border border-[#001E2B]">
                   Admin
                 </div>
               )}
             </div>
             
-            <div className="text-center md:text-left space-y-2">
-              <h1 className="text-4xl md:text-5xl font-black tracking-tight">{user?.name}</h1>
-              <div className="flex items-center justify-center md:justify-start gap-4 text-gray-400">
-                <div className="flex items-center gap-1.5 text-sm">
-                  <Mail size={16} />
+            <div className="text-center md:text-left space-y-3">
+              <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-white">{user?.name}</h1>
+              <div className="flex flex-wrap items-center justify-center md:justify-start gap-6 text-slate-400 font-medium">
+                <div className="flex items-center gap-2 text-sm">
+                  <Mail size={16} className="text-[#00ED64]" />
                   {user?.email}
                 </div>
-                <div className="flex items-center gap-1.5 text-sm">
-                  <Calendar size={16} />
-                  Joined {new Date(user?.createdAt).toLocaleDateString()}
+                <div className="flex items-center gap-2 text-sm">
+                  <Calendar size={16} className="text-[#00ED64]" />
+                  Member since {new Date(user?.createdAt).toLocaleDateString()}
                 </div>
               </div>
             </div>
           </section>
 
-          {/* 2. ACTIVITY STATS (From Schema Arrays) */}
+          {/* 2. ACTIVITY STATS (Tech Cards) */}
           <section className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="bg-white/5 border border-white/10 p-8 rounded-2xl flex items-center justify-between group hover:bg-white/10 transition-all">
-              <div className="space-y-1">
-                <p className="text-gray-500 text-xs font-black uppercase tracking-[0.2em]">Watch History</p>
-                <p className="text-3xl font-bold">{user?.watchHistory?.length || 0}</p>
-                <p className="text-sm text-gray-400">Videos partially or fully watched</p>
+            <div className="bg-[#021019] border border-slate-700/50 p-8 rounded-2xl flex items-center justify-between group hover:border-[#00ED64]/50 transition-all shadow-lg">
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 text-[#00ED64] mb-1">
+                    <Activity size={16} />
+                    <p className="text-xs font-bold uppercase tracking-widest">Watch History</p>
+                </div>
+                <p className="text-4xl font-bold text-white">{user?.watchHistory?.length || 0}</p>
+                <p className="text-sm text-slate-500">Total videos engaged</p>
               </div>
-              <History size={48} className="text-white/10 group-hover:text-[#e50914] transition-colors" />
+              <div className="p-4 bg-slate-800/50 rounded-full group-hover:bg-[#00ED64]/10 transition-colors">
+                  <History size={32} className="text-slate-400 group-hover:text-[#00ED64] transition-colors" />
+              </div>
             </div>
 
-            <div className="bg-white/5 border border-white/10 p-8 rounded-2xl flex items-center justify-between group hover:bg-white/10 transition-all">
-              <div className="space-y-1">
-                <p className="text-gray-500 text-xs font-black uppercase tracking-[0.2em]">Liked Videos</p>
-                <p className="text-3xl font-bold">{user?.likedVideos?.length || 0}</p>
-                <p className="text-sm text-gray-400">Titles saved to your favorites</p>
+            <div className="bg-[#021019] border border-slate-700/50 p-8 rounded-2xl flex items-center justify-between group hover:border-[#00ED64]/50 transition-all shadow-lg">
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 text-[#00ED64] mb-1">
+                    <Heart size={16} />
+                    <p className="text-xs font-bold uppercase tracking-widest">Favorites</p>
+                </div>
+                <p className="text-4xl font-bold text-white">{user?.likedVideos?.length || 0}</p>
+                <p className="text-sm text-slate-500">Saved to library</p>
               </div>
-              <Heart size={48} className="text-white/10 group-hover:text-[#e50914] transition-colors" />
+              <div className="p-4 bg-slate-800/50 rounded-full group-hover:bg-[#00ED64]/10 transition-colors">
+                  <Heart size={32} className="text-slate-400 group-hover:text-[#00ED64] transition-colors" />
+              </div>
             </div>
           </section>
 
-          {/* 3. CORE ACCOUNT DATA */}
+          {/* 3. CORE ACCOUNT DATA TABLE */}
           <section className="space-y-4">
-            <h2 className="text-lg font-bold text-gray-400 uppercase tracking-widest px-2">Account Details</h2>
-            <div className="bg-white/5 border border-white/10 rounded-2xl divide-y divide-white/10">
+            <h2 className="text-sm font-bold text-[#00ED64] uppercase tracking-widest px-1">Account Specifications</h2>
+            <div className="bg-[#021019] border border-slate-700/50 rounded-2xl overflow-hidden divide-y divide-slate-700/50">
               
-              <div className="p-6 flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <User className="text-[#e50914]" />
+              {/* Display Name Row */}
+              <div className="p-6 flex items-center justify-between hover:bg-white/[0.02] transition-colors">
+                <div className="flex items-center gap-5">
+                  <div className="p-2 bg-slate-800 rounded-lg text-slate-300">
+                      <User size={20} />
+                  </div>
                   <div>
-                    <p className="text-[10px] text-gray-500 uppercase font-black">Display Name</p>
-                    <p className="text-base font-medium">{user?.name}</p>
+                    <p className="text-[10px] text-slate-500 uppercase font-bold tracking-wider mb-0.5">Display Name</p>
+                    <p className="text-base font-medium text-white">{user?.name}</p>
                   </div>
                 </div>
-                <span className="text-xs text-gray-600 font-bold uppercase cursor-pointer hover:text-white transition">Edit</span>
+                <button className="text-xs flex items-center gap-1 text-slate-400 hover:text-[#00ED64] font-bold uppercase tracking-wider transition-colors">
+                    <Edit2 size={12} /> Edit
+                </button>
               </div>
 
-              <div className="p-6 flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <Mail className="text-[#e50914]" />
+              {/* Email Row */}
+              <div className="p-6 flex items-center justify-between hover:bg-white/[0.02] transition-colors">
+                <div className="flex items-center gap-5">
+                  <div className="p-2 bg-slate-800 rounded-lg text-slate-300">
+                      <Mail size={20} />
+                  </div>
                   <div>
-                    <p className="text-[10px] text-gray-500 uppercase font-black">Email Address</p>
-                    <p className="text-base font-medium">{user?.email}</p>
+                    <p className="text-[10px] text-slate-500 uppercase font-bold tracking-wider mb-0.5">Email Address</p>
+                    <p className="text-base font-medium text-white">{user?.email}</p>
                   </div>
                 </div>
-                <span className="text-[10px] bg-[#46d369]/20 text-[#46d369] px-2 py-1 rounded font-black uppercase tracking-tighter">Verified</span>
+                <div className="flex items-center gap-1.5 px-2 py-1 rounded bg-[#00ED64]/10 border border-[#00ED64]/20 text-[#00ED64] text-[10px] font-bold uppercase tracking-wider">
+                    <CheckCircle size={12} /> Verified
+                </div>
               </div>
 
-              <div className="p-6 flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <Shield className="text-[#e50914]" />
+              {/* Role Row */}
+              <div className="p-6 flex items-center justify-between hover:bg-white/[0.02] transition-colors">
+                <div className="flex items-center gap-5">
+                  <div className="p-2 bg-slate-800 rounded-lg text-slate-300">
+                      <Shield size={20} />
+                  </div>
                   <div>
-                    <p className="text-[10px] text-gray-500 uppercase font-black">Access Level</p>
-                    <p className="text-base font-medium capitalize">{user?.role}</p>
+                    <p className="text-[10px] text-slate-500 uppercase font-bold tracking-wider mb-0.5">Access Level</p>
+                    <p className="text-base font-medium text-white capitalize">{user?.role}</p>
                   </div>
                 </div>
               </div>
@@ -137,9 +167,11 @@ const Profile = () => {
           </section>
 
           {/* FOOTER DATA */}
-          <p className="text-center text-[10px] text-gray-600 uppercase tracking-[0.3em]">
-            Last Updated: {new Date(user?.updatedAt).toLocaleString()}
-          </p>
+          <div className="flex justify-center pt-8 border-t border-slate-800">
+            <p className="text-[10px] text-slate-600 font-mono uppercase tracking-[0.2em]">
+              System Last Sync: {new Date(user?.updatedAt).toLocaleString()}
+            </p>
+          </div>
 
         </motion.div>
       </main>

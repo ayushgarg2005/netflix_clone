@@ -2,6 +2,7 @@ import { useEffect, useState, useRef, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import axios from "axios";
+import { Check, Settings, Video } from "lucide-react"; // Import necessary icons
 
 import PlayerTopBar from "../components/PlayerTopBar";
 import PlayerCenterControls from "../components/PlayerCenterControls";
@@ -45,12 +46,10 @@ const Watch = () => {
         setMovie(movieRes.data);
         
         if (progressRes.data && progressRes.data.progress > 5) {
-          // Store time but don't apply until metadata loads
           setCurrentTime(progressRes.data.progress);
         }
       } catch (err) {
         console.error("Failed to load movie", err);
-        // navigate("/home"); // Optional: redirect on error
       } finally {
         setLoading(false);
       }
@@ -153,9 +152,9 @@ const Watch = () => {
 
   if (loading) {
     return (
-      <div className="h-screen bg-black flex flex-col items-center justify-center">
-        <div className="w-16 h-16 border-4 border-white/5 border-t-[#e50914] rounded-full animate-spin mb-6" />
-        <p className="text-white/40 text-xs font-black uppercase tracking-[0.4em] animate-pulse">Initializing Player</p>
+      <div className="h-screen bg-[#001E2B] flex flex-col items-center justify-center">
+        <div className="w-16 h-16 border-4 border-[#001E2B] border-t-[#00ED64] rounded-full animate-spin mb-6 shadow-[0_0_20px_rgba(0,237,100,0.2)]" />
+        <p className="text-[#00ED64] text-xs font-bold uppercase tracking-[0.2em] animate-pulse">Initializing Stream</p>
       </div>
     );
   }
@@ -164,7 +163,7 @@ const Watch = () => {
     <div 
       ref={videoContainerRef}
       onMouseMove={resetHideTimer}
-      className={`relative w-screen h-screen bg-black overflow-hidden select-none ${!showControls && "cursor-none"}`}
+      className={`relative w-screen h-screen bg-black overflow-hidden select-none font-sans ${!showControls && "cursor-none"}`}
     >
       {/* ===== VIDEO ELEMENT ===== */}
       <video
@@ -188,9 +187,15 @@ const Watch = () => {
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: 20 }}
-            className="absolute top-24 left-10 z-[100] bg-black/60 backdrop-blur-md border-l-4 border-[#e50914] px-4 py-2 text-white text-sm font-bold shadow-2xl"
+            className="absolute top-24 left-10 z-[100] bg-[#001E2B]/80 backdrop-blur-md border-l-4 border-[#00ED64] px-5 py-3 text-white text-sm font-bold shadow-2xl flex items-center gap-3 rounded-r-md"
           >
-            Resuming from where you left off...
+             <div className="p-1 bg-[#00ED64]/10 rounded-full">
+                <Video size={14} className="text-[#00ED64]" />
+             </div>
+             <div>
+                <span className="block text-[#00ED64] text-[10px] uppercase tracking-wider">System</span>
+                Resuming playback...
+             </div>
           </motion.div>
         )}
       </AnimatePresence>
@@ -199,58 +204,67 @@ const Watch = () => {
       <AnimatePresence>
         {showControls && (
           <motion.div
-            className="absolute inset-0 z-50 flex flex-col justify-between"
+            className="absolute inset-0 z-50 flex flex-col justify-between pointer-events-none" // pointer-events-none lets clicks pass through to video for play/pause
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.4 }}
+            transition={{ duration: 0.3 }}
           >
-            {/* Top Bar with Dynamic Movie Info */}
-            <PlayerTopBar movie={movie} onBack={() => { saveProgress(); navigate(-1); }} />
+            {/* Pointer events auto re-enabled inside children components */}
+            <div className="pointer-events-auto">
+               <PlayerTopBar movie={movie} onBack={() => { saveProgress(); navigate(-1); }} />
+            </div>
 
-            {/* Center: Play/Pause/Buffering */}
-            <PlayerCenterControls 
-              isPlaying={isPlaying} 
-              isBuffering={isBuffering} 
-              onToggle={togglePlay} 
-            />
+            <div className="pointer-events-auto flex-grow relative">
+                <PlayerCenterControls 
+                  isPlaying={isPlaying} 
+                  isBuffering={isBuffering} 
+                  onToggle={togglePlay} 
+                />
+            </div>
 
-            {/* Bottom: Seek, Volume, Fullscreen, Settings */}
-            <PlayerBottomControls
-              videoRef={videoRef}
-              isPlaying={isPlaying}
-              onToggle={togglePlay}
-              currentTime={currentTime}
-              duration={duration}
-              onOpenSettings={() => setShowSettings((prev) => !prev)}
-            />
+            <div className="pointer-events-auto">
+               <PlayerBottomControls
+                 videoRef={videoRef}
+                 isPlaying={isPlaying}
+                 onToggle={togglePlay}
+                 currentTime={currentTime}
+                 duration={duration}
+                 onOpenSettings={() => setShowSettings((prev) => !prev)}
+               />
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* ===== SETTINGS MODAL ===== */}
+      {/* ===== SETTINGS MODAL (Speed Control) ===== */}
       <AnimatePresence>
         {showSettings && (
           <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.95 }}
-            className="absolute bottom-28 right-10 z-[60] w-56 rounded-2xl bg-[#141414]/95 backdrop-blur-2xl border border-white/10 shadow-2xl text-white overflow-hidden"
+            initial={{ opacity: 0, scale: 0.95, y: 10 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: 10 }}
+            className="absolute bottom-24 right-6 md:right-10 z-[60] w-64 rounded-xl bg-[#021019]/95 backdrop-blur-xl border border-slate-700/50 shadow-2xl overflow-hidden"
           >
-            <div className="px-5 py-4 text-[10px] font-black text-white/40 uppercase tracking-[0.2em] border-b border-white/5">
-              Playback Speed
+            <div className="px-5 py-3.5 flex items-center gap-2 border-b border-slate-700/50 bg-[#001E2B]/50">
+              <Settings size={14} className="text-[#00ED64]" />
+              <span className="text-xs font-bold text-white uppercase tracking-wider">Playback Speed</span>
             </div>
-            <div className="p-2">
+            
+            <div className="p-2 space-y-1 max-h-60 overflow-y-auto custom-scrollbar">
               {[0.5, 0.75, 1, 1.25, 1.5, 2].map((rate) => (
                 <button
                   key={rate}
                   onClick={() => { setPlaybackRate(rate); setShowSettings(false); }}
                   className={`
-                    w-full px-4 py-3 text-left text-sm font-bold rounded-lg transition-all
-                    ${playbackRate === rate ? "bg-[#e50914] text-white" : "hover:bg-white/5 text-gray-400"}
+                    w-full px-4 py-2.5 text-left text-sm font-medium rounded-lg transition-all flex items-center justify-between group
+                    ${playbackRate === rate 
+                      ? "bg-[#00ED64]/10 text-[#00ED64] border border-[#00ED64]/20" 
+                      : "text-slate-400 hover:bg-white/5 hover:text-white border border-transparent"}
                   `}
                 >
-                  {rate === 1 ? "Normal" : `${rate}x`}
+                  <span>{rate === 1 ? "Normal" : `${rate}x`}</span>
+                  {playbackRate === rate && <Check size={14} />}
                 </button>
               ))}
             </div>

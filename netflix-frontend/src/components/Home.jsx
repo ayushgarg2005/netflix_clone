@@ -1,173 +1,134 @@
-// import { useEffect, useMemo, useState } from "react";
-// import { motion } from "framer-motion";
-// import Navbar from "../components/Navbar";
-// import HeroBanner from "../components/HeroBanner";
-// import MovieCard from "../components/MovieCard";
-
-// const Home = () => {
-//   const [videos, setVideos] = useState([]);
-//   const [continueWatching, setContinueWatching] = useState([]);
-//   const [loading, setLoading] = useState(true);
-
-//   useEffect(() => {
-//     const fetchData = async () => {
-//       try {
-//         const [videoRes, progressRes] = await Promise.all([
-//           fetch("http://localhost:5000/api/movies/all", { credentials: "include" }),
-//           fetch("http://localhost:5000/api/progress/continue-watching", { credentials: "include" })
-//         ]);
-
-//         const videoData = await videoRes.json();
-//         const progressData = await progressRes.json();
-
-//         setVideos(Array.isArray(videoData) ? videoData : []);
-//         setContinueWatching(Array.isArray(progressData) ? progressData : []);
-//       } catch (error) {
-//         console.error("Fetch error:", error);
-//       } finally {
-//         setLoading(false);
-//       }
-//     };
-//     fetchData();
-//   }, []);
-
-//   const featuredMovie = useMemo(() => {
-//     if (!videos.length) return null;
-//     // Prioritize non-premium content for the banner
-//     return videos.find((m) => !m.isPremium) || videos[0];
-//   }, [videos]);
-
-//   // Animation Variants
-//   const containerVariants = {
-//     hidden: { opacity: 0 },
-//     visible: {
-//       opacity: 1,
-//       transition: { staggerChildren: 0.1 }
-//     }
-//   };
-
-//   const itemVariants = {
-//     hidden: { y: 20, opacity: 0 },
-//     visible: { y: 0, opacity: 1 }
-//   };
-
-//   if (loading) {
-//     return (
-//       <div className="min-h-screen bg-[#141414] flex items-center justify-center">
-//         <div className="w-16 h-16 border-4 border-white/5 border-t-[#e50914] rounded-full animate-spin" />
-//       </div>
-//     );
-//   }
-
-//   return (
-//     <div className="bg-[#141414] min-h-screen text-white overflow-x-hidden selection:bg-[#e50914] selection:text-white">
-//       <Navbar />
-
-//       {/* HERO SECTION */}
-//       <section className="relative h-[75vh] md:h-[85vh] lg:h-[95vh] w-full">
-//         <HeroBanner movies={videos.slice(0, 5)} />
-//         {/* Cinematic Blend Overlay */}
-//         <div className="absolute bottom-0 left-0 w-full h-48 bg-gradient-to-t from-[#141414] via-[#141414]/60 to-transparent z-10" />
-//       </section>
-
-//       {/* MAIN CONTENT AREA */}
-//       <main className="relative z-20 px-6 md:px-14 pb-20 -mt-24 md:-mt-32 space-y-8">
-        
-//         {/* CONTINUE WATCHING SECTION */}
-//         {continueWatching.length > 0 && (
-//           <motion.section 
-//             initial="hidden"
-//             whileInView="visible"
-//             viewport={{ once: true }}
-//             variants={containerVariants}
-//             className="space-y-6"
-//           >
-//             <div className="flex items-end justify-between">
-//               <div className="space-y-1">
-//                 <span className="text-[#e50914] text-xs font-black uppercase tracking-[0.3em]">Resume</span>
-//                 <h2 className="text-xl md:text-2xl font-bold tracking-tighter">Continue Watching</h2>
-//               </div>
-//             </div>
-            
-//             <div className="flex gap-5 overflow-x-auto pb-6 scrollbar-hide snap-x">
-//               {continueWatching.map((item) => (
-//                 <motion.div 
-//                   variants={itemVariants}
-//                   key={item._id} 
-//                   className="flex-shrink-0 w-44 sm:w-52 md:w-64 lg:w-72 snap-start"
-//                 >
-//                   <MovieCard
-//                     movie={item.videoId} 
-//                     progress={item.progress}
-//                     showProgress={true}
-//                   />
-//                 </motion.div>
-//               ))}
-//             </div>
-//           </motion.section>
-//         )}
-
-//         {/* TRENDING SECTION */}
-//         <motion.section 
-//           initial="hidden"
-//           whileInView="visible"
-//           viewport={{ once: true, margin: "-100px" }}
-//           variants={containerVariants}
-//           className="space-y-8"
-//         >
-//           <div className="flex items-end justify-between border-b border-white/10 pb-4">
-//              <div className="space-y-1">
-//                 <span className="text-gray-500 text-xs font-black uppercase tracking-[0.3em]">Popular</span>
-//                 <h2 className="text-xl md:text-2xl font-bold tracking-tighter">Trending Now</h2>
-//              </div>
-//              <button className="text-[10px] font-bold uppercase tracking-widest text-gray-400 hover:text-[#e50914] transition-colors">
-//                Explore All
-//              </button>
-//           </div>
-
-//           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-x-5 gap-y-12">
-//             {videos.map((v) => (
-//               <motion.div variants={itemVariants} key={v._id}>
-//                 <MovieCard movie={v} />
-//               </motion.div>
-//             ))}
-//           </div>
-//         </motion.section>
-//       </main>
-
-//       {/* FOOTER SPACER */}
-//       <footer className="py-10 text-center border-t border-white/5 opacity-30 text-[10px] uppercase tracking-[0.5em]">
-//         &copy; {new Date().getFullYear()} YourStreamingService. All Rights Reserved.
-//       </footer>
-//     </div>
-//   );
-// };
-
-// export default Home;
-
-
-
-
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { motion } from "framer-motion";
+import { Sparkles, PlayCircle, TrendingUp, ArrowRight, Flame, ChevronLeft, ChevronRight } from "lucide-react";
 import Navbar from "../components/Navbar";
 import HeroBanner from "../components/HeroBanner";
 import MovieCard from "../components/MovieCard";
 
+// ✅ Updated Row Component: Buttons fixed to sides, Gaps added
+const SectionRow = ({ title, icon: Icon, movies, isLarge = false, showProgress = false }) => {
+  const rowRef = useRef(null);
+  const [isMoved, setIsMoved] = useState(false);
+
+  if (!movies || movies.length === 0) return null;
+
+  const handleClick = (direction) => {
+    setIsMoved(true);
+    if (rowRef.current) {
+      const { scrollLeft, clientWidth } = rowRef.current;
+      const scrollTo =
+        direction === "left"
+          ? scrollLeft - clientWidth
+          : scrollLeft + clientWidth;
+
+      rowRef.current.scrollTo({ left: scrollTo, behavior: "smooth" });
+    }
+  };
+
+  return (
+    <motion.div 
+      initial={{ opacity: 0, y: 20 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: "-50px" }}
+      transition={{ duration: 0.5 }}
+      className="space-y-4 py-8 group/row relative z-20"
+    >
+      {/* Section Header */}
+      <div className="px-12 flex items-end justify-between mb-4">
+        <div className="flex items-center gap-3">
+           <div className="w-1 h-6 bg-[#00ED64] rounded-full shadow-[0_0_10px_#00ED64]" />
+           <div className="flex items-center gap-2 text-white">
+             {Icon && <Icon className="text-[#00ED64]" size={20} />}
+             <h2 className="text-xl md:text-2xl font-bold tracking-tight hover:text-[#00ED64] transition-colors cursor-pointer">
+               {title}
+             </h2>
+           </div>
+        </div>
+        <div className="hidden md:flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-slate-500 hover:text-[#00ED64] transition-colors cursor-pointer group/btn">
+           View All <ArrowRight size={14} className="group-hover/btn:translate-x-1 transition-transform" />
+        </div>
+      </div>
+
+      {/* Slider Container - Relative for positioning buttons */}
+      <div className="relative group/slider w-full">
+        
+        {/* Left Arrow Button - Fixed to Left Edge */}
+        <div 
+            className={`
+              absolute top-0 bottom-0 left-0 z-40 
+              w-12 h-full 
+              flex items-center justify-center 
+              bg-[#001E2B]/80 backdrop-blur-sm
+              cursor-pointer 
+              opacity-0 group-hover/slider:opacity-100 transition-opacity duration-300
+              hover:bg-[#00ED64]/10 border-r border-white/5
+              ${!isMoved && "hidden"} 
+            `}
+            onClick={() => handleClick("left")}
+        >
+            <ChevronLeft className="text-white hover:text-[#00ED64] hover:scale-125 transition-all" size={32} />
+        </div>
+
+        {/* Scrollable Area - Added px-12 for the gap on sides */}
+        <div 
+          ref={rowRef}
+          className="
+            flex gap-4 md:gap-6 overflow-x-scroll 
+            px-12 
+            no-scrollbar scroll-smooth
+            w-full
+          "
+        >
+          {movies.map((movie) => (
+            <div 
+              key={movie._id} 
+              className={`
+                flex-shrink-0 transition-transform duration-300
+                ${isLarge ? "w-[280px] md:w-[350px]" : "w-[200px] md:w-[240px]"}
+              `}
+            >
+              <MovieCard 
+                movie={isLarge ? movie.videoId : movie} 
+                progress={showProgress ? movie.progress : 0}
+                showProgress={showProgress}
+              />
+            </div>
+          ))}
+        </div>
+
+        {/* Right Arrow Button - Fixed to Right Edge */}
+        <div 
+            className="
+              absolute top-0 bottom-0 right-0 z-40 
+              w-12 h-full 
+              flex items-center justify-center 
+              bg-[#001E2B]/80 backdrop-blur-sm
+              cursor-pointer 
+              opacity-0 group-hover/slider:opacity-100 transition-opacity duration-300
+              hover:bg-[#00ED64]/10 border-l border-white/5
+            "
+            onClick={() => handleClick("right")}
+        >
+            <ChevronRight className="text-white hover:text-[#00ED64] hover:scale-125 transition-all" size={32} />
+        </div>
+      </div>
+    </motion.div>
+  );
+};
+
 const Home = () => {
   const [videos, setVideos] = useState([]);
   const [continueWatching, setContinueWatching] = useState([]);
-  const [recommendations, setRecommendations] = useState([]); // ✅ NEW STATE
+  const [recommendations, setRecommendations] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // ✅ FETCH RECOMMENDATIONS IN PARALLEL
         const [videoRes, progressRes, recRes] = await Promise.all([
           fetch("http://localhost:5000/api/movies/all", { credentials: "include" }),
           fetch("http://localhost:5000/api/progress/continue-watching", { credentials: "include" }),
-          fetch("http://localhost:5000/api/movies/recommendations", { credentials: "include" }) // ✅ NEW CALL
+          fetch("http://localhost:5000/api/movies/recommendations", { credentials: "include" })
         ]);
 
         const videoData = await videoRes.json();
@@ -176,7 +137,7 @@ const Home = () => {
 
         setVideos(Array.isArray(videoData) ? videoData : []);
         setContinueWatching(Array.isArray(progressData) ? progressData : []);
-        setRecommendations(Array.isArray(recData) ? recData : []); // ✅ SET DATA
+        setRecommendations(Array.isArray(recData) ? recData : []);
       } catch (error) {
         console.error("Fetch error:", error);
       } finally {
@@ -186,138 +147,56 @@ const Home = () => {
     fetchData();
   }, []);
 
-  const featuredMovie = useMemo(() => {
-    if (!videos.length) return null;
-    return videos.find((m) => !m.isPremium) || videos[0];
-  }, [videos]);
-
-  // Animation Variants
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: { staggerChildren: 0.1 }
-    }
-  };
-
-  const itemVariants = {
-    hidden: { y: 20, opacity: 0 },
-    visible: { y: 0, opacity: 1 }
-  };
-
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#141414] flex items-center justify-center">
-        <div className="w-16 h-16 border-4 border-white/5 border-t-[#e50914] rounded-full animate-spin" />
+      <div className="min-h-screen bg-[#001E2B] flex items-center justify-center">
+        <div className="relative">
+            <div className="w-16 h-16 border-4 border-[#001E2B] border-t-[#00ED64] rounded-full animate-spin" />
+            <div className="absolute inset-0 bg-[#00ED64] opacity-20 blur-xl rounded-full animate-pulse" />
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="bg-[#141414] min-h-screen text-white overflow-x-hidden selection:bg-[#e50914] selection:text-white">
+    <div className="bg-[#001E2B] min-h-screen text-slate-100 font-sans selection:bg-[#00ED64] selection:text-[#001E2B] overflow-x-hidden">
       <Navbar />
 
-      {/* HERO SECTION */}
-      <section className="relative h-[75vh] md:h-[85vh] lg:h-[95vh] w-full">
+      {/* 1. GLOBAL BACKGROUND FX */}
+      <div className="fixed inset-0 z-0 pointer-events-none">
+        <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:60px_60px] opacity-20" />
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[500px] bg-[#00ED64] opacity-[0.03] blur-[150px] rounded-full" />
+      </div>
+
+      {/* 2. HERO SECTION */}
+      <section className="relative z-10 w-full pt-6">
         <HeroBanner movies={videos.slice(0, 5)} />
-        {/* Cinematic Blend Overlay */}
-        <div className="absolute bottom-0 left-0 w-full h-48 bg-gradient-to-t from-[#141414] via-[#141414]/60 to-transparent z-10" />
+        <div className="absolute bottom-0 left-0 w-full h-32 bg-gradient-to-t from-[#001E2B] via-[#001E2B]/80 to-transparent pointer-events-none z-20" />
       </section>
 
-      {/* MAIN CONTENT AREA */}
-      <main className="relative z-20 px-6 md:px-14 pb-20 -mt-24 md:-mt-32 space-y-12">
-        
-        {/* 1. CONTINUE WATCHING SECTION */}
+      {/* 3. MAIN CONTENT STACK */}
+      <main className="relative z-20 pb-20 space-y-2 md:space-y-12 -mt-10 md:-mt-12">
         {continueWatching.length > 0 && (
-          <motion.section 
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true }}
-            variants={containerVariants}
-            className="space-y-6"
-          >
-            <div className="flex items-end justify-between">
-              <div className="space-y-1">
-                <span className="text-[#e50914] text-xs font-black uppercase tracking-[0.3em]">Resume</span>
-                <h2 className="text-xl md:text-2xl font-bold tracking-tighter">Continue Watching</h2>
-              </div>
-            </div>
-            
-            <div className="flex gap-5 overflow-x-auto pb-6 scrollbar-hide snap-x">
-              {continueWatching.map((item) => (
-                <motion.div 
-                  variants={itemVariants}
-                  key={item._id} 
-                  className="flex-shrink-0 w-44 sm:w-52 md:w-64 lg:w-72 snap-start"
-                >
-                  <MovieCard
-                    movie={item.videoId} 
-                    progress={item.progress}
-                    showProgress={true}
-                  />
-                </motion.div>
-              ))}
-            </div>
-          </motion.section>
+          <SectionRow title="Continue Watching" icon={PlayCircle} movies={continueWatching} isLarge={true} showProgress={true} />
         )}
-
-        {/* 2. ✅ RECOMMENDED FOR YOU (AI POWERED) */}
         {recommendations.length > 0 && (
-          <motion.section 
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, margin: "-100px" }}
-            variants={containerVariants}
-            className="space-y-6"
-          >
-             <div className="flex items-end justify-between">
-               <div className="space-y-1">
-                  <span className="text-green-500 text-xs font-black uppercase tracking-[0.3em]">For You</span>
-                  <h2 className="text-xl md:text-2xl font-bold tracking-tighter">Because you watched...</h2>
-               </div>
-             </div>
-
-             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-x-4 gap-y-10">
-               {recommendations.map((v) => (
-                 <motion.div variants={itemVariants} key={v._id}>
-                   <MovieCard movie={v} />
-                 </motion.div>
-               ))}
-             </div>
-          </motion.section>
+          <SectionRow title="Recommended For You" icon={Sparkles} movies={recommendations} />
         )}
-
-        {/* 3. TRENDING SECTION */}
-        <motion.section 
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, margin: "-100px" }}
-          variants={containerVariants}
-          className="space-y-8"
-        >
-          <div className="flex items-end justify-between border-b border-white/10 pb-4">
-             <div className="space-y-1">
-                <span className="text-gray-500 text-xs font-black uppercase tracking-[0.3em]">Popular</span>
-                <h2 className="text-xl md:text-2xl font-bold tracking-tighter">Trending Now</h2>
-             </div>
-             <button className="text-[10px] font-bold uppercase tracking-widest text-gray-400 hover:text-[#e50914] transition-colors">
-               Explore All
-             </button>
-          </div>
-
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-x-5 gap-y-12">
-            {videos.map((v) => (
-              <motion.div variants={itemVariants} key={v._id}>
-                <MovieCard movie={v} />
-              </motion.div>
-            ))}
-          </div>
-        </motion.section>
+        <SectionRow title="Trending Now" icon={Flame} movies={videos} />
+        <SectionRow title="New Releases" icon={TrendingUp} movies={[...videos].reverse()} />
       </main>
 
-      {/* FOOTER */}
-      <footer className="py-10 text-center border-t border-white/5 opacity-30 text-[10px] uppercase tracking-[0.5em]">
-        &copy; {new Date().getFullYear()} Streamflix. All Rights Reserved.
+      {/* 4. FOOTER */}
+      <footer className="relative z-20 py-16 border-t border-slate-800 bg-[#021019]">
+        <div className="container mx-auto px-6 flex flex-col items-center justify-center text-center">
+            <div className="flex items-center gap-2 mb-8 opacity-80 hover:opacity-100 transition-opacity cursor-pointer">
+                <div className="w-8 h-8 bg-[#00ED64] rounded-lg flex items-center justify-center text-[#001E2B] font-bold text-lg shadow-[0_0_15px_rgba(0,237,100,0.3)]">S</div>
+                <span className="text-white font-bold text-xl tracking-tight">Streamflix</span>
+            </div>
+            <p className="text-slate-600 text-xs uppercase tracking-widest font-semibold">
+                &copy; {new Date().getFullYear()} Streamflix Inc. Engineered for Performance.
+            </p>
+        </div>
       </footer>
     </div>
   );

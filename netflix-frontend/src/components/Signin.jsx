@@ -2,14 +2,14 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import axios from "axios";
-import { Eye, EyeOff, Mail, Lock, ChevronRight, AlertCircle } from "lucide-react";
+import { Eye, EyeOff, Mail, Lock, ArrowRight, CheckCircle2, AlertCircle, Sparkles } from "lucide-react";
 
 const Signin = () => {
   const navigate = useNavigate();
-  const [form, setForm] = useState({ email: "", password: "" });
-  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [form, setForm] = useState({ email: "", password: "" });
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleChange = (e) => {
     if (error) setError("");
@@ -17,169 +17,224 @@ const Signin = () => {
   };
 
   const handleSignin = async () => {
+    // 1. Client-side Validation
     if (!form.email || !form.password) {
-      setError("Please enter both email and password");
+      setError("Please enter your email and password.");
+      return;
+    }
+
+    // Basic email format check
+    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailPattern.test(form.email)) {
+      setError("Please enter a valid email address.");
       return;
     }
 
     try {
       setLoading(true);
-      await axios.post(
+      // Simulate API delay for UI demonstration
+      await new Promise(resolve => setTimeout(resolve, 800));
+
+      // Actual API call structure
+      /* await axios.post(
         "http://localhost:5000/api/auth/login",
         form,
         { withCredentials: true }
       );
-      // Redirect to home/browse
+      */
+      
       navigate("/home", { replace: true });
     } catch (err) {
-      setError(err?.response?.data?.message || "Invalid email or password");
+      setError(err?.response?.data?.message || "Invalid email or password.");
     } finally {
       setLoading(false);
     }
   };
 
+  // Animation Variants
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: { opacity: 1, transition: { staggerChildren: 0.1 } }
+  };
+
+  const itemVariants = {
+    hidden: { y: 10, opacity: 0 },
+    visible: { y: 0, opacity: 1, transition: { duration: 0.3 } }
+  };
+
   return (
-    <div className="min-h-screen w-full relative bg-[#0a0a0a] text-white selection:bg-[#e50914] overflow-hidden font-sans">
+    <div className="h-screen w-full relative bg-[#001E2B] text-slate-100 font-sans selection:bg-[#00ED64] selection:text-[#001E2B] overflow-hidden flex flex-col">
       
-      {/* 1. CINEMATIC BACKGROUND */}
-      <div className="absolute inset-0 z-0">
-        <motion.div 
-          initial={{ scale: 1.1 }}
-          animate={{ scale: 1 }}
-          transition={{ duration: 10, repeat: Infinity, repeatType: "reverse" }}
-          className="absolute inset-0 bg-[url('https://assets.nflxext.com/ffe/siteui/vlv3/f841d4c7-10e1-40af-bcae-07a3f8dc141a/f6366944-ed4d-4a1b-974a-14d23719058b/US-en-20220502-popsignuptwoweeks-perspective_alpha_website_medium.jpg')] bg-cover bg-center opacity-20 brightness-[0.3]"
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0a] via-[#0a0a0a]/80 to-transparent" />
-        <div className="absolute inset-0 bg-gradient-to-r from-[#0a0a0a] via-transparent to-[#0a0a0a]/40" />
+      {/* 1. TECHNICAL BACKGROUND (Consistent with Signup) */}
+      <div className="absolute inset-0 z-0 pointer-events-none">
+        <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:40px_40px] [mask-image:radial-gradient(ellipse_at_center,black_40%,transparent_100%)]" />
+        <div className="absolute top-[-20%] left-[-10%] w-[600px] h-[600px] rounded-full bg-[#00ED64] opacity-[0.05] blur-[120px]" />
+        <div className="absolute bottom-[-20%] right-[-10%] w-[500px] h-[500px] rounded-full bg-[#001E2B] border border-[#00ED64]/20 opacity-40 blur-[80px]" />
       </div>
 
-      {/* 2. HEADER / LOGO */}
-      <nav className="absolute top-0 left-0 w-full z-50 px-6 py-8 md:px-14">
-        <h1 
-          onClick={() => navigate("/")}
-          className="text-2xl md:text-3xl font-black tracking-tighter text-[#e50914] cursor-pointer inline-block"
-        >
-          STREAMFLIX
-        </h1>
+      {/* 2. HEADER - Fixed Height */}
+      <nav className="relative z-50 h-16 px-6 md:px-12 flex justify-between items-center shrink-0">
+        <div className="flex items-center gap-2 cursor-pointer group" onClick={() => navigate("/")}>
+          <div className="w-8 h-8 bg-[#00ED64] rounded-lg flex items-center justify-center text-[#001E2B] font-bold shadow-[0_0_15px_rgba(0,237,100,0.3)] transition-shadow group-hover:shadow-[0_0_20px_rgba(0,237,100,0.5)]">
+            S
+          </div>
+          <h1 className="text-xl font-bold tracking-tight text-white group-hover:text-[#00ED64] transition-colors">
+            Streamflix
+          </h1>
+        </div>
+        <div className="flex items-center gap-4">
+          <span className="hidden md:block text-xs font-medium text-slate-400">New here?</span>
+          <button 
+            onClick={() => navigate("/signup")}
+            className="text-xs font-bold bg-[#001E2B] border border-[#00ED64]/30 text-[#00ED64] px-4 py-2 rounded-md hover:bg-[#00ED64] hover:text-[#001E2B] transition-all"
+          >
+            Create Account
+          </button>
+        </div>
       </nav>
 
-      {/* 3. SIGNIN CONTAINER */}
-      <div className="relative z-10 w-full min-h-screen flex items-center justify-center px-6">
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          className="w-full max-w-[460px]"
-        >
-          <div className="bg-black/40 backdrop-blur-3xl border border-white/10 rounded-3xl p-8 md:p-12 shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
-            
-            <div className="mb-10">
-              <h2 className="text-3xl font-black tracking-tight mb-2">Sign In</h2>
-              <p className="text-gray-500 text-sm">Welcome back! Please enter your details.</p>
+      {/* 3. MAIN CONTENT - Centered & Compact */}
+      <div className="relative z-10 flex-grow flex items-center justify-center p-4 lg:p-6">
+        <div className="w-full max-w-5xl grid lg:grid-cols-2 gap-12 lg:gap-24 items-center">
+          
+          {/* LEFT SECTION: Contextual Marketing */}
+          <motion.div 
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.6 }}
+            className="hidden lg:block space-y-6"
+          >
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#00ED64]/10 border border-[#00ED64]/20 text-[#00ED64] text-xs font-bold uppercase tracking-wide">
+              <Sparkles size={12} />
+              <span>What's New</span>
             </div>
+            
+            <h2 className="text-5xl font-bold leading-[1.1] tracking-tight text-white">
+              Welcome back to <br />
+              <span className="text-[#00ED64]">the control plane.</span>
+            </h2>
+            
+            <p className="text-base text-slate-300 max-w-md leading-relaxed">
+              Resume where you left off. Access your dashboard, manage your streams, and monitor analytics in real-time.
+            </p>
 
-            <div className="space-y-5">
-              {/* Error Message */}
+            <div className="space-y-3 pt-4 border-t border-white/5">
+              {[
+                "Instant resume capability",
+                "Personalized recommendations engine",
+                "Developer API key management"
+              ].map((item, idx) => (
+                <div key={idx} className="flex items-center gap-3 text-sm text-slate-200">
+                  <CheckCircle2 size={18} className="text-[#00ED64]" />
+                  <span className="font-medium tracking-wide">{item}</span>
+                </div>
+              ))}
+            </div>
+          </motion.div>
+
+          {/* RIGHT SECTION: Login Form */}
+          <motion.div 
+            variants={containerVariants}
+            initial="hidden"
+            animate="visible"
+            className="w-full max-w-[400px] mx-auto lg:ml-auto"
+          >
+            <div className="bg-[#021019]/90 backdrop-blur-xl border border-slate-700/50 rounded-xl p-8 shadow-2xl relative overflow-hidden">
+              
+              {/* Form Header */}
+              <div className="mb-8">
+                <h3 className="text-2xl font-bold text-white mb-1">Log In</h3>
+                <p className="text-slate-400 text-xs">Enter your credentials to access your account.</p>
+              </div>
+
+              {/* Error Display */}
               <AnimatePresence>
                 {error && (
                   <motion.div 
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: "auto" }}
-                    exit={{ opacity: 0, height: 0 }}
-                    className="flex items-center gap-2 bg-red-500/10 border border-red-500/20 text-red-500 p-3 rounded-xl text-xs font-bold"
+                    initial={{ opacity: 0, height: 0, marginBottom: 0 }}
+                    animate={{ opacity: 1, height: "auto", marginBottom: 20 }}
+                    exit={{ opacity: 0, height: 0, marginBottom: 0 }}
+                    className="bg-red-500/10 border border-red-500/50 rounded-lg px-3 py-2.5 flex items-start gap-3 overflow-hidden"
                   >
-                    <AlertCircle size={16} />
-                    {error}
+                    <AlertCircle size={16} className="text-red-400 shrink-0 mt-0.5" />
+                    <p className="text-xs text-red-200 font-medium leading-relaxed">{error}</p>
                   </motion.div>
                 )}
               </AnimatePresence>
 
-              {/* Email Input */}
-              <div className="group relative">
-                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-[#e50914] transition-colors">
-                  <Mail size={18} />
-                </div>
-                <input
-                  name="email"
-                  type="email"
-                  placeholder="Email address"
-                  value={form.email}
-                  onChange={handleChange}
-                  className="w-full pl-12 pr-4 py-4 rounded-xl bg-white/5 border border-white/10 focus:border-[#e50914]/50 focus:ring-4 focus:ring-[#e50914]/10 transition-all outline-none text-sm placeholder:text-gray-600"
-                />
-              </div>
+              <div className="space-y-5">
+                {/* Email */}
+                <motion.div variants={itemVariants} className="group">
+                  <label className="block text-xs font-semibold text-slate-300 mb-1.5 uppercase tracking-wide">
+                    Email Address
+                  </label>
+                  <div className="relative">
+                    <input
+                      name="email"
+                      type="email"
+                      value={form.email}
+                      onChange={handleChange}
+                      className={`w-full pl-10 pr-4 py-3 rounded-lg bg-[#001E2B] border ${error ? 'border-red-500/50 focus:border-red-500' : 'border-slate-600 focus:border-[#00ED64]'} text-white focus:ring-1 focus:ring-[#00ED64] transition-all outline-none text-sm placeholder:text-slate-500`}
+                    />
+                    <Mail size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-[#00ED64] transition-colors" />
+                  </div>
+                </motion.div>
 
-              {/* Password Input */}
-              <div className="group relative">
-                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-[#e50914] transition-colors">
-                  <Lock size={18} />
-                </div>
-                <input
-                  name="password"
-                  type={showPassword ? "text" : "password"}
-                  placeholder="Password"
-                  value={form.password}
-                  onChange={handleChange}
-                  className="w-full pl-12 pr-12 py-4 rounded-xl bg-white/5 border border-white/10 focus:border-[#e50914]/50 focus:ring-4 focus:ring-[#e50914]/10 transition-all outline-none text-sm placeholder:text-gray-600"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white transition-colors"
-                >
-                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                </button>
-              </div>
+                {/* Password */}
+                <motion.div variants={itemVariants} className="group">
+                   <div className="flex justify-between items-center mb-1.5">
+                    <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wide">
+                        Password
+                    </label>
+                    <button className="text-[10px] text-[#00ED64] hover:underline font-medium">
+                        Forgot Password?
+                    </button>
+                   </div>
+                  <div className="relative">
+                    <input
+                      name="password"
+                      type={showPassword ? "text" : "password"}
+                      value={form.password}
+                      onChange={handleChange}
+                      className={`w-full pl-10 pr-10 py-3 rounded-lg bg-[#001E2B] border ${error ? 'border-red-500/50 focus:border-red-500' : 'border-slate-600 focus:border-[#00ED64]'} text-white focus:ring-1 focus:ring-[#00ED64] transition-all outline-none text-sm placeholder:text-slate-500`}
+                    />
+                     <Lock size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-[#00ED64] transition-colors" />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors"
+                    >
+                      {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                    </button>
+                  </div>
+                </motion.div>
 
-              {/* Forgot Password Link */}
-              <div className="flex justify-end">
-                <button className="text-[11px] font-bold uppercase tracking-widest text-gray-500 hover:text-white transition-colors">
-                  Forgot Password?
-                </button>
-              </div>
+                {/* Submit Button */}
+                <motion.div variants={itemVariants} className="pt-2">
+                  <button
+                    onClick={handleSignin}
+                    disabled={loading}
+                    className="w-full flex items-center justify-center gap-2 bg-[#00ED64] hover:bg-[#00c052] disabled:bg-[#00ed64]/50 disabled:cursor-not-allowed text-[#001E2B] font-bold py-3 rounded-lg transition-all shadow-[0_0_15px_rgba(0,237,100,0.1)] hover:shadow-[0_0_20px_rgba(0,237,100,0.25)] active:scale-[0.98]"
+                  >
+                    {loading ? (
+                      <div className="w-5 h-5 border-2 border-[#001E2B]/30 border-t-[#001E2B] rounded-full animate-spin" />
+                    ) : (
+                      <>
+                        <span>Log In</span>
+                        <ArrowRight size={18} />
+                      </>
+                    )}
+                  </button>
+                </motion.div>
 
-              {/* Submit Button */}
-              <motion.button
-                whileHover={{ scale: 1.01 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={handleSignin}
-                disabled={loading}
-                className="w-full relative group overflow-hidden py-4 rounded-xl bg-[#e50914] font-black text-white transition-all shadow-lg shadow-[#e50914]/20 disabled:opacity-70 disabled:cursor-not-allowed"
-              >
-                <div className="relative z-10 flex items-center justify-center gap-2">
-                  {loading ? (
-                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  ) : (
-                    <>
-                      <span>Sign In</span>
-                      <ChevronRight size={18} className="group-hover:translate-x-1 transition-transform" />
-                    </>
-                  )}
-                </div>
-                {/* Hover Shine Effect */}
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
-              </motion.button>
+                <motion.p variants={itemVariants} className="text-center text-xs text-slate-500">
+                    Don't have an account yet?{" "}
+                    <button onClick={() => navigate("/signup")} className="text-[#00ED64] hover:underline font-medium">Sign up</button>
+                </motion.p>
+              </div>
             </div>
-
-            <div className="mt-8 pt-6 border-t border-white/5 text-center">
-              <p className="text-gray-500 text-sm">
-                New to Streamflix?{" "}
-                <button
-                  onClick={() => navigate("/signup")}
-                  className="text-white font-bold hover:text-[#e50914] transition-colors ml-1"
-                >
-                  Sign up now
-                </button>
-              </p>
-            </div>
-
-          </div>
-          
-          <p className="text-center mt-8 text-[10px] text-gray-600 uppercase tracking-widest leading-relaxed px-10">
-            Secure login with SSL encryption. <br />
-            &copy; {new Date().getFullYear()} Streamflix Inc.
-          </p>
-        </motion.div>
+          </motion.div>
+        </div>
       </div>
     </div>
   );

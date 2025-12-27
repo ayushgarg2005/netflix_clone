@@ -5,29 +5,29 @@ const DesktopNav = () => {
   const location = useLocation();
 
   return (
-    <nav className="hidden lg:flex items-center gap-6">
-      {NAV_LINKS.map((link) => (
-        <Link
-          key={link.name}
-          to={link.path}
-          className={`text-[13px] font-medium relative group
-            ${
-              location.pathname === link.path
-                ? "text-white"
-                : "text-gray-300 hover:text-white"
-            }`}
-        >
-          {link.name}
-          <span
-            className={`absolute -bottom-1 left-0 h-[2px] bg-[#e50914] transition-all
-              ${
-                location.pathname === link.path
-                  ? "w-full"
-                  : "w-0 group-hover:w-full"
-              }`}
-          />
-        </Link>
-      ))}
+    <nav className="hidden lg:flex items-center gap-8">
+      {NAV_LINKS.map((link) => {
+        const isActive = location.pathname === link.path;
+        
+        return (
+          <Link
+            key={link.name}
+            to={link.path}
+            className={`text-sm font-semibold tracking-wide transition-colors relative py-1
+              ${isActive ? "text-white" : "text-slate-400 hover:text-[#00ED64]"}
+            `}
+          >
+            {link.name}
+            
+            {/* Active Indicator Line with Glow */}
+            <span
+              className={`absolute -bottom-1 left-0 h-[2px] rounded-full bg-[#00ED64] shadow-[0_0_8px_rgba(0,237,100,0.6)] transition-all duration-300 ease-out
+                ${isActive ? "w-full opacity-100" : "w-0 opacity-0"}
+              `}
+            />
+          </Link>
+        );
+      })}
     </nav>
   );
 };

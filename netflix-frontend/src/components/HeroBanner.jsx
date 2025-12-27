@@ -1,166 +1,5 @@
-// import { Play, Info, Calendar, Clock, Star } from "lucide-react";
-// import { motion } from "framer-motion";
-// import { useNavigate } from "react-router-dom";
-
-// const HeroBanner = ({ movie }) => {
-//   const navigate = useNavigate();
-
-//   if (!movie) return null;
-
-//   // Extract year from releaseDate
-//   const releaseYear = movie.releaseDate 
-//     ? new Date(movie.releaseDate).getFullYear() 
-//     : "N/A";
-
-//   return (
-//     <section className="relative h-[80vh] md:h-[85vh] w-full overflow-hidden bg-black">
-//       {/* 1. CINEMATIC BACKGROUND */}
-//       <motion.div
-//         initial={{ scale: 1.1, opacity: 0 }}
-//         animate={{ scale: 1, opacity: 1 }}
-//         transition={{ duration: 2, ease: "easeOut" }}
-//         className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-//         style={{ backgroundImage: `url(${movie.bannerUrl})` }}
-//       >
-//         {/* Layered Gradients for maximum readability */}
-//         {/* Bottom fade to blend with the page grid */}
-//         <div className="absolute inset-0 bg-gradient-to-t from-[#141414] via-transparent to-transparent z-[2]" />
-//         {/* Left-to-Right shadow to make text pop */}
-//         <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/20 to-transparent z-[1]" />
-//       </motion.div>
-
-//       {/* 2. CONTENT AREA */}
-//       <div className="relative z-10 h-full flex flex-col justify-end px-6 md:px-16 pb-24 max-w-4xl">
-        
-//         {/* Branding/Type Label */}
-//         <motion.div 
-//           initial={{ opacity: 0, x: -20 }}
-//           animate={{ opacity: 1, x: 0 }}
-//           className="flex items-center gap-2 mb-3"
-//         >
-//           <div className="w-1 h-6 bg-[#e50914] rounded-full" />
-//           <span className="text-gray-200 text-xs font-bold uppercase tracking-[0.3em]">
-//             Featured {movie.type}
-//           </span>
-//         </motion.div>
-
-//         {/* Title */}
-//         <motion.h1
-//           initial={{ opacity: 0, y: 20 }}
-//           animate={{ opacity: 1, y: 0 }}
-//           transition={{ duration: 0.8, delay: 0.2 }}
-//           className="text-5xl md:text-7xl lg:text-8xl font-black text-white mb-6 tracking-tighter leading-[0.9]"
-//         >
-//           {movie.title}
-//         </motion.h1>
-
-//         {/* Metadata Row */}
-//         <motion.div 
-//           initial={{ opacity: 0 }}
-//           animate={{ opacity: 1 }}
-//           transition={{ delay: 0.4 }}
-//           className="flex flex-wrap items-center gap-4 text-sm font-medium text-white/90 mb-6"
-//         >
-//           {/* Rating - using your rating schema */}
-//           <div className="flex items-center gap-1 text-[#46d369] font-bold">
-//             <Star size={14} fill="#46d369" />
-//             <span>{movie.rating > 0 ? `${movie.rating * 10}% Match` : "New"}</span>
-//           </div>
-
-//           <span className="text-gray-300 font-bold border border-gray-600 px-1.5 py-0.5 rounded text-[10px]">
-//             {movie.ageRestriction}
-//           </span>
-
-//           <span className="flex items-center gap-1">
-//             <Calendar size={14} className="text-gray-400" />
-//             {releaseYear}
-//           </span>
-
-//           <span className="flex items-center gap-1">
-//             <Clock size={14} className="text-gray-400" />
-//             {movie.duration}m
-//           </span>
-
-//           <span className="bg-white/10 px-1.5 rounded text-[10px] uppercase font-bold text-gray-300">
-//             {movie.quality}
-//           </span>
-//         </motion.div>
-
-//         {/* Genres Row */}
-//         <motion.div 
-//           initial={{ opacity: 0 }}
-//           animate={{ opacity: 1 }}
-//           transition={{ delay: 0.5 }}
-//           className="flex flex-wrap gap-2 mb-6"
-//         >
-//           {movie.genres?.map((genre, index) => (
-//             <span key={index} className="text-xs text-gray-300 flex items-center">
-//               {genre}
-//               {index !== movie.genres.length - 1 && (
-//                 <span className="mx-2 text-gray-600">•</span>
-//               )}
-//             </span>
-//           ))}
-//         </motion.div>
-
-//         {/* Description */}
-//         <motion.p
-//           initial={{ opacity: 0 }}
-//           animate={{ opacity: 1 }}
-//           transition={{ delay: 0.6 }}
-//           className="text-gray-300 text-base md:text-lg max-w-xl mb-8 line-clamp-3 leading-relaxed drop-shadow-lg"
-//         >
-//           {movie.description}
-//         </motion.p>
-
-//         {/* Call to Actions */}
-//         <motion.div 
-//           initial={{ opacity: 0, y: 20 }}
-//           animate={{ opacity: 1, y: 0 }}
-//           transition={{ delay: 0.7 }}
-//           className="flex items-center gap-4"
-//         >
-//           <button
-//             onClick={() => navigate(`/watch/${movie._id}`)}
-//             className="flex items-center gap-3 bg-white text-black px-8 py-3 rounded-md 
-//              font-bold text-lg hover:bg-white/90 transition shadow-lg active:scale-95"
-//           >
-//             <Play size={24} fill="black" />
-//             Play
-//           </button>
-
-//           <button 
-//             onClick={() => navigate(`/movie/${movie._id}`)}
-//             className="flex items-center gap-3 bg-white/10 backdrop-blur-md text-white px-8 py-3 rounded-md 
-//               font-bold text-lg border border-white/20 hover:bg-white/20 transition active:scale-95"
-//           >
-//             <Info size={24} />
-//             More Info
-//           </button>
-
-//         </motion.div>
-//       </div>
-
-//       {/* Decorative side vignetting */}
-//       <div className="absolute inset-y-0 left-0 w-32 bg-gradient-to-r from-black/40 to-transparent pointer-events-none" />
-//     </section>
-//   );
-// };
-
-// export default HeroBanner;
-
-
-
-
-
-
-
-
-
-
-
 import { useState } from "react";
-import { Play, Info, Calendar, Clock, Star, ChevronLeft, ChevronRight } from "lucide-react";
+import { Play, Info, Calendar, Clock, Star, Activity, ChevronLeft, ChevronRight } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 
@@ -168,12 +7,10 @@ const HeroBanner = ({ movies }) => {
   const navigate = useNavigate();
   const [currentIndex, setCurrentIndex] = useState(0);
 
-  // Guard clause
   if (!movies || movies.length === 0) return null;
 
   const movie = movies[currentIndex];
 
-  // Navigation logic
   const handleNext = () => {
     setCurrentIndex((prev) => (prev + 1) % movies.length);
   };
@@ -187,120 +24,132 @@ const HeroBanner = ({ movies }) => {
     : "N/A";
 
   return (
-    <section className="relative h-[80vh] md:h-[85vh] w-full overflow-hidden bg-black">
-      {/* 1. CINEMATIC BACKGROUND (Wrapped in AnimatePresence for smooth transitions) */}
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={movie._id} // Key changes trigger the animation
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 1 }}
-          className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-          style={{ backgroundImage: `url(${movie.bannerUrl})` }}
-        >
-          <div className="absolute inset-0 bg-gradient-to-t from-[#141414] via-transparent to-transparent z-[2]" />
-          <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/20 to-transparent z-[1]" />
-        </motion.div>
-      </AnimatePresence>
-
-      {/* 2. TOGGLE BUTTONS */}
-      <div className="absolute inset-y-0 left-0 right-0 flex items-center justify-between px-4 z-30 pointer-events-none">
-        <button
-          onClick={handlePrev}
-          className="p-2 rounded-full bg-black/20 hover:bg-black/50 text-white/50 hover:text-white transition-all pointer-events-auto backdrop-blur-sm border border-white/10"
-          aria-label="Previous Banner"
-        >
-          <ChevronLeft size={32} />
-        </button>
-        <button
-          onClick={handleNext}
-          className="p-2 rounded-full bg-black/20 hover:bg-black/50 text-white/50 hover:text-white transition-all pointer-events-auto backdrop-blur-sm border border-white/10"
-          aria-label="Next Banner"
-        >
-          <ChevronRight size={32} />
-        </button>
-      </div>
-
-      {/* 3. CONTENT AREA */}
-      <div className="relative z-10 h-full flex flex-col justify-end px-6 md:px-16 pb-24 max-w-4xl">
+    <div className="relative w-full group">
+      {/* 1. CONTAINER HEIGHT */}
+      <div className="relative h-[500px] lg:h-[650px] w-full overflow-hidden bg-black">
+        
         <AnimatePresence mode="wait">
           <motion.div
             key={movie._id}
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: 20 }}
-            transition={{ duration: 0.5 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.8 }}
+            className="absolute inset-0"
           >
-            {/* Branding */}
-            <div className="flex items-center gap-2 mb-3">
-              <div className="w-1 h-6 bg-[#e50914] rounded-full" />
-              <span className="text-gray-200 text-xs font-bold uppercase tracking-[0.3em]">
-                Featured {movie.type}
-              </span>
+            {/* 2. BACKGROUND IMAGE - High Quality & Clear */}
+            <div className="absolute inset-0">
+               {/* object-cover: Fills screen
+                  object-top: Prioritizes faces/heads usually at top of posters
+               */}
+               <img 
+                 src={movie.bannerUrl} 
+                 alt={movie.title}
+                 className="w-full h-full object-cover object-top opacity-90" 
+               />
             </div>
 
-            {/* Title */}
-            <h1 className="text-5xl md:text-7xl lg:text-8xl font-black text-white mb-6 tracking-tighter leading-[0.9]">
-              {movie.title}
-            </h1>
+            {/* 3. GRADIENTS - Redesigned for Clarity */}
+            
+            {/* Gradient A: Bottom Fade (Seamless blend into content) */}
+            <div className="absolute inset-0 bg-gradient-to-t from-[#141414] via-transparent to-transparent" />
 
-            {/* Metadata */}
-            <div className="flex flex-wrap items-center gap-4 text-sm font-medium text-white/90 mb-6">
-              <div className="flex items-center gap-1 text-[#46d369] font-bold">
-                <Star size={14} fill="#46d369" />
-                <span>{movie.rating > 0 ? `${movie.rating * 10}% Match` : "New"}</span>
-              </div>
-              <span className="text-gray-300 font-bold border border-gray-600 px-1.5 py-0.5 rounded text-[10px]">
-                {movie.ageRestriction}
-              </span>
-              <span className="flex items-center gap-1">
-                <Calendar size={14} className="text-gray-400" />
-                {releaseYear}
-              </span>
-              <span className="flex items-center gap-1">
-                <Clock size={14} className="text-gray-400" />
-                {movie.duration}m
-              </span>
-            </div>
-
-            {/* Description */}
-            <p className="text-gray-300 text-base md:text-lg max-w-xl mb-8 line-clamp-3 leading-relaxed drop-shadow-lg">
-              {movie.description}
-            </p>
-
-            {/* Actions */}
-            <div className="flex items-center gap-4">
-              <button
-                onClick={() => navigate(`/watch/${movie._id}`)}
-                className="flex items-center gap-3 bg-white text-black px-8 py-3 rounded-md font-bold text-lg hover:bg-white/90 transition shadow-lg active:scale-95"
-              >
-                <Play size={24} fill="black" /> Play
-              </button>
-              <button 
-                onClick={() => navigate(`/movie/${movie._id}`)}
-                className="flex items-center gap-3 bg-white/10 backdrop-blur-md text-white px-8 py-3 rounded-md font-bold text-lg border border-white/20 hover:bg-white/20 transition active:scale-95"
-              >
-                <Info size={24} /> More Info
-              </button>
-            </div>
+            {/* Gradient B: Left Text Protection (Subtle Scrim) 
+                Instead of a solid block, this is a soft shadow behind text only.
+            */}
+            <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/40 to-transparent lg:w-[60%]" />
+            
           </motion.div>
         </AnimatePresence>
-      </div>
 
-      {/* Decorative side vignetting */}
-      <div className="absolute inset-y-0 left-0 w-32 bg-gradient-to-r from-black/40 to-transparent pointer-events-none z-20" />
+        {/* 4. CONTENT LAYER */}
+        <div className="relative z-10 h-full container mx-auto px-6 md:px-12 flex flex-col justify-center pt-20">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={movie._id}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.5 }}
+              className="max-w-2xl space-y-6"
+            >
+              {/* Trending Badge */}
+              <div className="flex items-center gap-3">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded bg-[#00ED64] text-black text-[11px] font-extrabold uppercase tracking-wide">
+                  <Activity size={12} />
+                  <span># {currentIndex + 1} Trending</span>
+                </div>
+              </div>
 
-      {/* Slide Indicators (Optional: The dots at the bottom) */}
-      <div className="absolute bottom-10 right-10 flex gap-2 z-30">
-        {movies.map((_, i) => (
-          <div 
-            key={i} 
-            className={`h-1 transition-all duration-300 rounded-full ${i === currentIndex ? "w-8 bg-[#e50914]" : "w-2 bg-gray-500"}`} 
-          />
-        ))}
+              {/* Title - Bigger & Cleaner */}
+              <h1 className="text-5xl md:text-7xl font-extrabold text-white tracking-tight leading-[0.9] drop-shadow-lg">
+                {movie.title}
+              </h1>
+
+              {/* Metadata Row */}
+              <div className="flex flex-wrap items-center gap-4 text-sm font-medium text-gray-200">
+                <div className="flex items-center gap-1 text-[#46d369]">
+                  <Star size={16} fill="currentColor" />
+                  <span className="text-white font-bold text-base">{movie.rating?.toFixed(1) || "N/A"}</span>
+                </div>
+                
+                <span className="text-gray-400">|</span>
+
+                <span>{releaseYear}</span>
+                
+                <span className="text-gray-400">|</span>
+
+                <span>{movie.duration}m</span>
+                
+                <span className="border border-gray-500 px-2 py-0.5 rounded text-xs text-gray-300">
+                  {movie.ageRestriction}+
+                </span>
+              </div>
+
+              {/* Description - Limited width for readability against background */}
+              <p className="text-gray-300 text-base md:text-lg leading-relaxed line-clamp-3 max-w-xl drop-shadow-md">
+                {movie.description}
+              </p>
+
+              {/* Buttons */}
+              <div className="flex items-center gap-4 pt-4">
+                <button
+                  onClick={() => navigate(`/watch/${movie._id}`)}
+                  className="flex items-center gap-3 bg-white hover:bg-gray-200 text-black px-8 py-3.5 rounded font-bold text-base transition-all active:scale-95"
+                >
+                  <Play size={20} fill="currentColor" /> 
+                  Play
+                </button>
+                <button 
+                  onClick={() => navigate(`/movie/${movie._id}`)}
+                  className="flex items-center gap-3 bg-gray-600/60 hover:bg-gray-600/80 text-white px-8 py-3.5 rounded font-bold text-base transition-all active:scale-95 backdrop-blur-sm"
+                >
+                  <Info size={22} /> 
+                  More Info
+                </button>
+              </div>
+            </motion.div>
+          </AnimatePresence>
+        </div>
+
+        {/* 5. NAVIGATION ARROWS (Clean & Minimal) */}
+        <div className="absolute bottom-8 right-12 z-20 flex gap-4">
+            <button 
+                onClick={handlePrev}
+                className="p-3 rounded-full bg-black/30 hover:bg-white hover:text-black border border-white/20 transition-all backdrop-blur-sm group"
+            >
+                <ChevronLeft size={24} />
+            </button>
+            <button 
+                onClick={handleNext}
+                className="p-3 rounded-full bg-black/30 hover:bg-white hover:text-black border border-white/20 transition-all backdrop-blur-sm group"
+            >
+                <ChevronRight size={24} />
+            </button>
+        </div>
+
       </div>
-    </section>
+    </div>
   );
 };
 

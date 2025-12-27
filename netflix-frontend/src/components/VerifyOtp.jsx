@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Mail, ArrowLeft, RefreshCw } from "lucide-react";
+import { Mail, ArrowLeft, RefreshCw, ShieldCheck, ArrowRight } from "lucide-react";
 
 const VerifyOtp = () => {
   const navigate = useNavigate();
@@ -19,7 +19,7 @@ const VerifyOtp = () => {
 
   if (!userData?.email) return null;
 
-  const { email, name, password } = userData;
+  const { email } = userData;
 
   const [otp, setOtp] = useState(Array(6).fill(""));
   const [loading, setLoading] = useState(false);
@@ -59,11 +59,13 @@ const VerifyOtp = () => {
 
     try {
       setLoading(true);
-
+      // Simulate API delay
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
       // 🔐 Example API call
       // await verifySignupOtp({ email, otp: finalOtp });
 
-      navigate("/browse");
+      navigate("/home");
     } catch (err) {
       alert(err?.response?.data?.message || "Verification failed");
     } finally {
@@ -72,41 +74,46 @@ const VerifyOtp = () => {
   };
 
   return (
-    <div className="min-h-screen relative flex items-center justify-center bg-black text-white overflow-hidden">
-      {/* BACKGROUND */}
-      <div className="absolute inset-0 z-0">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-[#e50914]/15 via-transparent to-transparent opacity-60" />
-        <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px]" />
+    <div className="h-screen w-full relative bg-[#001E2B] text-slate-100 font-sans selection:bg-[#00ED64] selection:text-[#001E2B] overflow-hidden flex items-center justify-center">
+      
+      {/* 1. TECHNICAL BACKGROUND */}
+      <div className="absolute inset-0 z-0 pointer-events-none">
+        <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:40px_40px] [mask-image:radial-gradient(ellipse_at_center,black_40%,transparent_100%)]" />
+        <div className="absolute top-[-20%] right-[30%] w-[500px] h-[500px] rounded-full bg-[#00ED64] opacity-[0.05] blur-[120px]" />
       </div>
 
+      {/* 2. CARD CONTAINER */}
       <motion.div
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.6 }}
-        className="relative z-10 w-full max-w-md px-6"
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="relative z-10 w-full max-w-[440px] px-4"
       >
-        <div className="bg-[#141414]/80 backdrop-blur-2xl border border-white/5 rounded-3xl p-8 md:p-12 shadow-[0_20px_60px_rgba(0,0,0,0.7)]">
-          {/* BACK */}
+        <div className="bg-[#021019]/90 backdrop-blur-xl border border-slate-700/50 rounded-xl p-8 shadow-2xl">
+          
+          {/* Back Button */}
           <button
             onClick={() => navigate("/signup")}
-            className="flex items-center gap-2 text-gray-500 hover:text-white transition text-sm mb-8"
+            className="group flex items-center gap-2 text-xs font-semibold text-slate-500 hover:text-white transition-colors mb-6 uppercase tracking-wide"
           >
-            <ArrowLeft size={16} /> Back to Signup
+            <ArrowLeft size={14} className="group-hover:-translate-x-1 transition-transform" /> 
+            Back to Signup
           </button>
 
-          <div className="text-center mb-10">
-            <div className="w-16 h-16 bg-[#e50914]/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
-              <Mail className="text-[#e50914]" size={32} />
+          {/* Header */}
+          <div className="text-center mb-8">
+            <div className="w-12 h-12 bg-[#00ED64]/10 rounded-lg flex items-center justify-center mx-auto mb-4 border border-[#00ED64]/20 shadow-[0_0_15px_rgba(0,237,100,0.1)]">
+              <ShieldCheck className="text-[#00ED64]" size={24} />
             </div>
-            <h1 className="text-3xl font-bold">Verify Email</h1>
-            <p className="text-gray-500 text-sm mt-2">
-              We’ve sent a 6-digit code to <br />
-              <span className="text-gray-200 font-medium">{email}</span>
+            <h1 className="text-2xl font-bold text-white mb-2">Check your inbox</h1>
+            <p className="text-slate-400 text-sm leading-relaxed">
+              We’ve sent a 6-digit verification code to <br />
+              <span className="text-white font-medium border-b border-[#00ED64]/30 pb-0.5">{email}</span>
             </p>
           </div>
 
-          {/* OTP INPUT */}
-          <div className="flex justify-center gap-3 mb-8">
+          {/* OTP INPUTS */}
+          <div className="flex justify-between gap-2 mb-8">
             {otp.map((digit, index) => (
               <input
                 key={index}
@@ -116,29 +123,40 @@ const VerifyOtp = () => {
                 value={digit}
                 onChange={(e) => handleChange(e.target.value, index)}
                 onKeyDown={(e) => handleKeyDown(e, index)}
-                className="w-12 h-16 text-2xl text-center bg-neutral-900 border border-neutral-800 rounded-xl focus:border-[#e50914] outline-none"
+                className={`w-12 h-14 sm:w-14 sm:h-16 text-2xl font-bold text-center rounded-lg bg-[#001E2B] border ${digit ? 'border-[#00ED64] text-[#00ED64]' : 'border-slate-600 text-white'} focus:border-[#00ED64] focus:ring-1 focus:ring-[#00ED64] transition-all outline-none caret-[#00ED64] shadow-inner`}
               />
             ))}
           </div>
 
-          {/* VERIFY */}
+          {/* VERIFY BUTTON */}
           <button
             onClick={handleVerify}
             disabled={loading || otp.join("").length < 6}
-            className="w-full py-4 rounded-xl bg-[#e50914] font-bold disabled:opacity-50"
+            className="w-full flex items-center justify-center gap-2 bg-[#00ED64] hover:bg-[#00c052] disabled:bg-[#00ED64]/20 disabled:text-slate-500 disabled:cursor-not-allowed text-[#001E2B] font-bold py-3.5 rounded-lg transition-all shadow-[0_0_15px_rgba(0,237,100,0.1)] hover:shadow-[0_0_20px_rgba(0,237,100,0.25)] active:scale-[0.98]"
           >
-            {loading ? "Verifying..." : "Verify & Continue"}
+            {loading ? (
+              <div className="w-5 h-5 border-2 border-[#001E2B]/30 border-t-[#001E2B] rounded-full animate-spin" />
+            ) : (
+              <>
+                <span>Verify Email</span>
+                <ArrowRight size={18} />
+              </>
+            )}
           </button>
 
-          {/* RESEND */}
+          {/* RESEND TIMER */}
           <div className="mt-8 text-center text-sm">
             {timer > 0 ? (
-              <p className="text-gray-500">
-                Resend code in <span className="text-[#e50914]">{timer}s</span>
+              <p className="text-slate-500 font-medium">
+                Resend code in <span className="text-[#00ED64] tabular-nums">{timer}s</span>
               </p>
             ) : (
-              <button className="flex items-center gap-2 mx-auto text-white hover:text-[#e50914]">
-                <RefreshCw size={14} /> Resend Code
+              <button 
+                onClick={() => setTimer(30)} // Add resend logic here
+                className="flex items-center gap-2 mx-auto text-slate-300 hover:text-[#00ED64] transition-colors font-medium group"
+              >
+                <RefreshCw size={14} className="group-hover:rotate-180 transition-transform duration-500" /> 
+                Resend Code
               </button>
             )}
           </div>
