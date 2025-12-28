@@ -4,6 +4,7 @@ import Video from "../models/video.model.js";
 import User from "../models/user.model.js";
 import EmbeddingService from "../Utils/aiService.js";
 import { updateUserVector } from "../Utils/updateUserPreferences.js";
+import View from "../models/view.model.js"; // Import the new model
 
 /* ================= 1. UPLOAD MOVIE (Generates Vector) ================= */
 export const uploadMovie = async (req, res) => {
@@ -150,5 +151,90 @@ export const getMovieById = async (req, res) => {
     res.json(movie);
   } catch (error) {
     res.status(500).json({ message: error.message });
+  }
+};
+
+
+
+/* ================= INCREMENT UNIQUE VIEW ================= */
+export const incrementViews = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user.id;
+
+    // 1. Check if user already viewed this in the last 24h (handled by View model)
+    const alreadyViewed = await View.findOne({ userId, videoId: id });
+    if (alreadyViewed) {
+      return res.status(200).json({ message: "View already counted recently" });
+    }
+
+    // 2. Record the unique view
+    await View.create({ userId, videoId: id });
+
+    // 3. Increment the global view count on the video
+    await Video.findByIdAndUpdate(id, { $inc: { views: 1 } });
+
+    res.status(200).json({ success: true });
+  } catch (error) {
+    // If multiple clicks happen simultaneously, MongoDB might throw a duplicate key error
+    // We catch it silently because the view is already recorded.
+    if (error.code === 11000) return res.status(200).json({ message: "Duplicate click" });
+    res.status(500).json({ message: "Error tracking view" });
+  }
+};
+
+
+/* ================= GET TRENDING NOW (The Netflix Formula) ================= */
+export const getTrendingMovies = async (req, res) => {
+  try {
+    const trendingVideos = await Video.aggregate([
+      {
+        $addFields: {
+          // 1. Calculate Age using the automatic createdAt field
+          ageInHours: {
+            $add: [
+              {
+                $divide: [
+                  { $subtract: [new Date(), "$createdAt"] }, // Current Time minus Creation Time
+                  3600000, // Convert milliseconds to hours
+                ],
+              },
+              1, // 1-hour buffer so brand new movies don't have a score of infinity
+            ],
+          },
+          // 2. Popularity Math (1 Like = 50 Views)
+          popularity: {
+            $add: [
+              { $ifNull: ["$views", 0] }, 
+              { $multiply: [{ $ifNull: ["$likes", 0] }, 50] }
+            ],
+          },
+        },
+      },
+      {
+        $addFields: {
+          // 3. Trending Score = Popularity / (Age ^ Gravity)
+          // Gravity 1.5 ensures older movies drop off the list over time
+          trendingScore: {
+            $divide: ["$popularity", { $pow: ["$ageInHours", 1.5] }],
+          },
+        },
+      },
+      { $sort: { trendingScore: -1 } },
+      { $limit: 20 },
+      {
+        $project: {
+          embedding: 0, // Hide AI data
+          trendingScore: 0, // Hide internal math
+          ageInHours: 0,
+          popularity: 0
+        },
+      },
+    ]);
+
+    res.status(200).json(trendingVideos);
+  } catch (error) {
+    console.error("Trending Error:", error);
+    res.status(500).json({ message: "Server error" });
   }
 };

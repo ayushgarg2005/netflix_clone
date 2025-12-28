@@ -6,7 +6,9 @@ import {
   getAllMovies, 
   getMovieById,
   getRecommendations, // ✅ New
-  likeVideo           // ✅ New
+  likeVideo,           // ✅ New
+  getTrendingMovies, 
+  incrementViews
 } from "../controllers/uploadMovie.controller.js"; // ⚠️ Rename your file to video.controller.js
 
 const router = express.Router();
@@ -28,8 +30,11 @@ router.get("/all", getAllMovies);
 // 3. AI & Personalization (Needs Login)
 router.get("/recommendations", userAuth, getRecommendations); // ✅ AI Route
 router.post("/like", userAuth, likeVideo);                    // ✅ Like Route
+router.post("/view/:id", userAuth, incrementViews); // Tracks unique view and increments count
 
 // 4. Specific Movie (Put this last so it doesn't catch "recommendations" as an ID)
+router.get("/trending", getTrendingMovies); // Logic: Weighted by age/likes/views
 router.get("/:id", getMovieById);
+
 
 export default router;

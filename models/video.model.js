@@ -71,4 +71,7 @@ const videoSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+videoSchema.index({ createdAt: -1 });
+videoSchema.index({ views: -1, likes: -1 });
+
 export default mongoose.model("Video", videoSchema);
