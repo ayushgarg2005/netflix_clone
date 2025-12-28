@@ -17,39 +17,51 @@ const Signin = () => {
   };
 
   const handleSignin = async () => {
-    // 1. Client-side Validation
-    if (!form.email || !form.password) {
-      setError("Please enter your email and password.");
-      return;
-    }
+  // 1. Client-side validation
+  if (!form.email || !form.password) {
+    setError("Please enter your email and password.");
+    return;
+  }
 
-    // Basic email format check
-    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailPattern.test(form.email)) {
-      setError("Please enter a valid email address.");
-      return;
-    }
+  const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailPattern.test(form.email)) {
+    setError("Please enter a valid email address.");
+    return;
+  }
 
-    try {
-      setLoading(true);
-      // Simulate API delay for UI demonstration
-      await new Promise(resolve => setTimeout(resolve, 800));
+  try {
+    setLoading(true);
+    setError("");
 
-      // Actual API call structure
-      /* await axios.post(
-        "http://localhost:5000/api/auth/login",
-        form,
-        { withCredentials: true }
-      );
-      */
-      
+    const res = await axios.post(
+      "http://localhost:5000/api/auth/login",
+      {
+        email: form.email,
+        password: form.password,
+      },
+      {
+        withCredentials: true, // IMPORTANT for cookies
+      }
+    );
+
+    console.log(res);
+    // ✅ Navigate ONLY on successful login
+    if (res.status==200) {
       navigate("/browse", { replace: true });
-    } catch (err) {
-      setError(err?.response?.data?.message || "Invalid email or password.");
-    } finally {
-      setLoading(false);
     }
-  };
+
+  } catch (err) {
+    // ❌ Backend error handling
+    if (err.response) {
+      setError(err.response.data.message);
+    } else {
+      setError("Unable to connect to server. Try again later.");
+    }
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   // Animation Variants
   const containerVariants = {

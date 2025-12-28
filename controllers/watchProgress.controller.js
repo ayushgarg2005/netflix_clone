@@ -18,8 +18,7 @@ export const updateProgress = async (req, res) => {
 
     // 2. Calculate Status
     const percentage = (progress / duration) * 100;
-    const isEnd = (duration - progress) <= 30;
-    const completed = isEnd || percentage >= 95;
+    const completed = percentage >= 95;
 
     // --- REWATCH LOGIC ---
     // Reset if user restarts video (progress < 10s) after finishing it

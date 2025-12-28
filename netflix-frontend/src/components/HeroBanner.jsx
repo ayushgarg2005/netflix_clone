@@ -26,7 +26,7 @@ const HeroBanner = ({ movies }) => {
   return (
     <div className="relative w-full group z-0">
       {/* 1. CONTAINER HEIGHT: Taller for a more cinematic feel */}
-      <div className="relative h-[550px] lg:h-[750px] w-full overflow-hidden bg-[#0b0c0f]">
+      <div className="relative h-[550px] lg:h-[650px] w-full overflow-hidden bg-[#0b0c0f]">
         
         <AnimatePresence mode="wait">
           <motion.div
