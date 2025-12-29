@@ -10,10 +10,13 @@ import MovieDetails from "./components/MovieDetails";
 import Profile from "./components/Profile";
 import Account from "./components/Account";
 import LandingPage from "./components/LandingPage";
+import WatchPartyPage from "./components/WatchPartyPage";
+import { Toaster } from "react-hot-toast";
 function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
+        <Toaster position="top-center" reverseOrder={false} />
         <Routes>
           <Route path="/" element={<LandingPage />} />
           <Route path="/signup" element={<Signup />} />
@@ -24,6 +27,7 @@ function App() {
           <Route path="/movie/:id" element={<ProtectedRoute><MovieDetails /></ProtectedRoute>} />
           <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
           <Route path="/account" element={<ProtectedRoute><Account /></ProtectedRoute>} />
+          <Route path="/watchparty/:id" element={<WatchPartyPage />} />
         </Routes>
       </AuthProvider>
     </BrowserRouter>
