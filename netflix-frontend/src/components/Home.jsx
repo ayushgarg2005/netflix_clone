@@ -120,24 +120,28 @@ const Home = () => {
   const [videos, setVideos] = useState([]);
   const [continueWatching, setContinueWatching] = useState([]);
   const [recommendations, setRecommendations] = useState([]);
+  const [trendingNow,setTrendingNow] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [videoRes, progressRes, recRes] = await Promise.all([
+        const [videoRes, progressRes, recRes, trendingRes] = await Promise.all([
           fetch("http://localhost:5000/api/movies/all", { credentials: "include" }),
           fetch("http://localhost:5000/api/progress/continue-watching", { credentials: "include" }),
-          fetch("http://localhost:5000/api/movies/recommendations", { credentials: "include" })
+          fetch("http://localhost:5000/api/movies/recommendations", { credentials: "include" }),
+          fetch("http://localhost:5000/api/movies/trending", { credentials: "include" })
         ]);
 
         const videoData = await videoRes.json();
         const progressData = await progressRes.json();
         const recData = await recRes.json();
+        const trendingData = await trendingRes.json();
 
         setVideos(Array.isArray(videoData) ? videoData : []);
         setContinueWatching(Array.isArray(progressData) ? progressData : []);
         setRecommendations(Array.isArray(recData) ? recData : []);
+        setTrendingNow(Array.isArray(trendingData) ? trendingData : []);
       } catch (error) {
         console.error("Fetch error:", error);
       } finally {
@@ -182,7 +186,7 @@ const Home = () => {
         {recommendations.length > 0 && (
           <SectionRow title="Recommended For You" icon={Sparkles} movies={recommendations} />
         )}
-        <SectionRow title="Trending Now" icon={Flame} movies={videos} />
+        <SectionRow title="Trending Now" icon={Flame} movies={trendingNow} />
         <SectionRow title="New Releases" icon={TrendingUp} movies={[...videos].reverse()} />
       </main>
 

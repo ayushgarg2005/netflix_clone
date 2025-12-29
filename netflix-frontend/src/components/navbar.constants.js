@@ -2,7 +2,7 @@ import { User, Settings, HelpCircle } from "lucide-react";
 
 export const NAV_LINKS = [
   { name: "Home", path: "/" },
-  { name: "TV Shows", path: "/tv-shows" },
+  { name: "Watch Party", path: "/watchParty" },
   { name: "Movies", path: "/movies" },
   { name: "New & Popular", path: "/latest" },
   { name: "My List", path: "/my-list" },
