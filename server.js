@@ -9,6 +9,7 @@ import connectDB from "./ConnectDB/mongodb.js";
 import authRoutes from "./routes/auth.route.js";
 import movieRoutes from "./routes/movie.route.js";
 import watchProgressRoutes from "./routes/watchProgress.route.js";
+import roomIdRoutes from "./routes/roomId.route.js";
 
 dotenv.config();
 connectDB();
@@ -47,6 +48,7 @@ app.use(cookieParser());
 app.use("/api/auth", authRoutes);
 app.use("/api/movies", movieRoutes);
 app.use("/api/progress", watchProgressRoutes);
+app.use("/api/room", roomIdRoutes);
 
 /* ==========================================================================
    ⚡ SOCKET.IO - REAL-TIME WATCH PARTY BACKEND ⚡

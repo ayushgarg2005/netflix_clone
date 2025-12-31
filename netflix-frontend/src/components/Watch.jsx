@@ -3,7 +3,8 @@ import { useParams, useNavigate } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import axios from "axios";
 import { Check, Settings, Video, Users, Plus, LogIn, X } from "lucide-react"; // ✅ Added Icons
-
+import { nanoid } from "nanoid";
+import toast from "react-hot-toast";
 import PlayerTopBar from "../components/PlayerTopBar";
 import PlayerCenterControls from "../components/PlayerCenterControls";
 import PlayerBottomControls from "../components/PlayerBottomControls";
@@ -77,16 +78,20 @@ const Watch = () => {
   };
 
   // 2. Create New Room
-  const handleCreateRoom = () => {
+  const handleCreateRoom = async () => {
     saveProgress();
-    // Generate a random 6-character ID
-    const newRoomId = Math.random().toString(36).substring(2, 8);
-    navigate(`/watchparty/${id}?room=${newRoomId}`);
+    const roomId = nanoid(8);
+    const res=await axios.post("http://localhost:5000/api/room/add", { roomId });
+    navigate(`/watchparty/${id}?room=${roomId}`);
   };
 
   // 3. Join Existing Room
-  const handleJoinRoom = () => {
-    if (!joinRoomId.trim()) return;
+  const handleJoinRoom = async () => {
+    const res=await axios.get(`http://localhost:5000/api/room/search/${joinRoomId}`);
+    if (!res.data.found) {
+      toast.error("Room ID not found!");
+      return;
+    }
     saveProgress();
     navigate(`/watchparty/${id}?room=${joinRoomId}`);
   };
