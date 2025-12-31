@@ -10,6 +10,7 @@ import authRoutes from "./routes/auth.route.js";
 import movieRoutes from "./routes/movie.route.js";
 import watchProgressRoutes from "./routes/watchProgress.route.js";
 import roomIdRoutes from "./routes/roomId.route.js";
+import Message from "./models/message.model.js";
 
 dotenv.config();
 connectDB();
@@ -54,53 +55,88 @@ app.use("/api/room", roomIdRoutes);
    ⚡ SOCKET.IO - REAL-TIME WATCH PARTY BACKEND ⚡
    This section handles all the logic for syncing users together.
    ========================================================================== */
+/* ⚡ SOCKET.IO - WATCH PARTY LOGIC ⚡ */
+// Assuming you have your Message model imported
+// const Message = require("./models/Message"); 
+
 io.on("connection", (socket) => {
-  console.log(`🟢 User Connected: ${socket.id}`);
+  console.log(`🟢 Connected: ${socket.id}`);
 
   // 1. JOIN ROOM
-  // Triggered when a user enters a Watch Party URL
   socket.on("join_room", (roomId) => {
     socket.join(roomId);
-    console.log(`👥 User ${socket.id} joined room: ${roomId}`);
+    console.log(`👥 ${socket.id} joined room: ${roomId}`);
     
-    // Notify others in the room (optional, good for showing "User joined" toasts)
-    socket.to(roomId).emit("user_joined", { id: socket.id });
+    /**
+     * When a new user joins, we automatically ask the host for the current state
+     * so the new user starts at the right time.
+     */
+    socket.to(roomId).emit("request_sync_from_host", { requesterId: socket.id });
   });
 
-  // 2. VIDEO SYNC ACTIONS (Play, Pause, Seek)
-  // Triggered when the Host clicks controls on the video player
+  // 2. ADMIN VIDEO ACTIONS (Play, Pause, Seek)
   socket.on("video_action", (data) => {
     const { roomId, type, timestamp } = data;
-    
-    // Debug log to monitor actions in console
-    console.log(`🎬 Action: ${type} | Room: ${roomId} | Time: ${timestamp}`);
-
-    // 🚨 BROADCAST TO OTHERS ONLY
-    // We use 'socket.to()' instead of 'io.to()' so the sender doesn't receive their own message.
-    // Receiving your own 'pause' message would cause a loop.
-    socket.to(roomId).emit("receive_video_action", { 
-        type, 
-        timestamp 
+    /**
+     * We broadcast the admin's action to all other users in the room.
+     * The frontend logic handles the 'isOutOfSync' check to see if the 
+     * guest should follow this command or ignore it.
+     */
+    socket.to(roomId).emit("receive_video_action", {
+      type,
+      timestamp,
+      senderId: socket.id
     });
   });
 
-  // 3. LIVE CHAT
-  // Triggered when a user types a message
-  socket.on("send_message", (data) => {
+  // 3. MANUAL SYNC REQUEST (Triggered by Guest "Sync" button)
+  socket.on("request_sync", ({ roomId }) => {
+    console.log(`🔄 Sync requested by ${socket.id} in room ${roomId}`);
+    /**
+     * We broadcast this to the room. 
+     * Only the user who is 'isAdmin' in the frontend will respond to this event.
+     */
+    socket.to(roomId).emit("request_sync_from_host", { requesterId: socket.id });
+  });
+
+  // 4. HOST SENDING STATE (Host response to Sync Request)
+  socket.on("send_sync_state", (data) => {
+    const { requesterId, timestamp, isPlaying } = data;
+    /**
+     * The host sends their current timeline and play status.
+     * We send this specifically back to the guest who requested it.
+     */
+    io.to(requesterId).emit("receive_sync_state", {
+      timestamp,
+      isPlaying
+    });
+  });
+
+  // 5. CHAT MESSAGING
+  socket.on("send_message", async (data) => {
     const { roomId, message, user } = data;
+    const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
-    // BROADCAST TO EVERYONE (Including Sender)
-    // For chat, the sender wants to see their message appear immediately.
-    io.to(roomId).emit("receive_message", {
-        user, 
+    try {
+      // Save message to DB
+      const newMessage = new Message({
+        roomId,
+        user,
         message,
-        timestamp: new Date().toISOString()
-    });
+        time
+      });
+      await newMessage.save();
+
+      // Broadcast message to everyone in the room (including sender)
+      io.to(roomId).emit("receive_message", newMessage);
+    } catch (error) {
+      console.error("Error saving message:", error);
+    }
   });
 
-  // 4. DISCONNECT
+  // 6. DISCONNECT
   socket.on("disconnect", () => {
-    console.log(`🔴 User Disconnected: ${socket.id}`);
+    console.log(`🔴 Disconnected: ${socket.id}`);
   });
 });
 

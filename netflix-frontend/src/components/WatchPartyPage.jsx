@@ -3,274 +3,270 @@ import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import axios from "axios";
 import io from "socket.io-client";
-import { MessageSquare, Send, X, Users, Copy } from "lucide-react";
+import { Send, Users, RefreshCw } from "lucide-react";
 import toast from "react-hot-toast";
 
-// Import your existing custom controls
 import PlayerTopBar from "../components/PlayerTopBar";
 import PlayerCenterControls from "../components/PlayerCenterControls";
 import PlayerBottomControls from "../components/PlayerBottomControls";
 
-// Initialize Socket once
 const socket = io("http://localhost:5000");
-
-const CONTROLS_HIDE_DELAY = 3000;
 
 const WatchPartyPage = () => {
   const { id } = useParams();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const roomId = searchParams.get("room") || id;
+  const roomId = searchParams.get("room");
 
-  // Refs
-  const videoContainerRef = useRef(null);
   const videoRef = useRef(null);
-  const hideTimerRef = useRef(null);
+  const isRemoteUpdate = useRef(false); 
   const messagesEndRef = useRef(null);
 
-  // Sync Lock (Prevents Loop)
-  const isRemoteUpdate = useRef(false);
-
-  // State
   const [movie, setMovie] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [isPlaying, setIsPlaying] = useState(false); // Default false for parties
-  const [isBuffering, setIsBuffering] = useState(false);
-  const [showControls, setShowControls] = useState(true);
+  const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
-  const [showChat, setShowChat] = useState(true); // Toggle Chat sidebar
+  const [showChat, setShowChat] = useState(true);
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
 
-  /* ================= 1. FETCH MOVIE ================= */
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [currentUser, setCurrentUser] = useState(null);
+  const [hasJoined, setHasJoined] = useState(false);
+  const [isOutOfSync, setIsOutOfSync] = useState(false);
+
+  // 1. Initialize Session
   useEffect(() => {
-    const fetchMovie = async () => {
+    const initializeParty = async () => {
       try {
-        const res = await axios.get(`http://localhost:5000/api/movies/${id}`, { withCredentials: true });
-        setMovie(res.data);
+        const [userRes, roomRes] = await Promise.all([
+          axios.get("http://localhost:5000/api/auth/me", { withCredentials: true }),
+          axios.get(`http://localhost:5000/api/room/search/${roomId}`)
+        ]);
+
+        const loggedInUserId = String(userRes.data.user.id || userRes.data.user._id);
+        const dbAdminId = String(roomRes.data.adminId);
+
+        setCurrentUser(userRes.data.user);
+        setIsAdmin(loggedInUserId === dbAdminId);
+
+        const [movieRes, msgRes] = await Promise.all([
+          axios.get(`http://localhost:5000/api/movies/${id}`, { withCredentials: true }),
+          axios.get(`http://localhost:5000/api/room/messages/${roomId}`)
+        ]);
+
+        setMovie(movieRes.data);
+        setMessages(msgRes.data);
       } catch (err) {
-        console.error(err);
-        toast.error("Failed to load movie");
-      } finally {
-        setLoading(false);
+        toast.error("Session expired or invalid");
+        navigate("/");
       }
     };
-    fetchMovie();
-  }, [id]);
+    if (roomId) initializeParty();
+  }, [roomId, id, navigate]);
 
-  /* ================= 2. SOCKET SYNC ENGINE ================= */
+  // 2. Socket Logic
   useEffect(() => {
-    if (!roomId) return;
+    if (!roomId || !movie || !hasJoined) return;
+
     socket.emit("join_room", roomId);
-    toast.success("Connected to Party!");
 
-    socket.on("receive_video_action", (data) => {
-      // 🔒 LOCK: This event is from the server, not the user
-      isRemoteUpdate.current = true;
-      const video = videoRef.current;
-      if (!video) return;
-
-      switch (data.type) {
-        case "play":
-            // Sync time if drift > 1s
-            if (Math.abs(video.currentTime - data.timestamp) > 1) {
-                video.currentTime = data.timestamp;
-            }
-            video.play().catch(() => {}); // Catch autoplay blocks
-            setIsPlaying(true);
-            toast("Playing...", { icon: "▶️", duration: 1000 });
-            break;
-        case "pause":
-            video.pause();
-            setIsPlaying(false);
-            toast("Paused", { icon: "⏸️", duration: 1000 });
-            break;
-        case "seek":
-            video.currentTime = data.timestamp;
-            break;
-        default: break;
+    socket.on("request_sync_from_host", ({ requesterId }) => {
+      if (isAdmin && videoRef.current) {
+        socket.emit("send_sync_state", {
+          requesterId,
+          timestamp: videoRef.current.currentTime,
+          isPlaying: !videoRef.current.paused
+        });
       }
-
-      // 🔓 UNLOCK after 1 second (allow buffer time)
-      setTimeout(() => { isRemoteUpdate.current = false; }, 1000);
     });
 
-    socket.on("receive_message", (data) => {
-        setMessages(prev => [...prev, data]);
-        scrollToBottom();
+    socket.on("receive_sync_state", (data) => {
+      if (videoRef.current) {
+        isRemoteUpdate.current = true;
+        videoRef.current.currentTime = data.timestamp;
+        if (data.isPlaying) videoRef.current.play().catch(() => {});
+        else videoRef.current.pause();
+        
+        setIsOutOfSync(false);
+        toast.success("Synced with host");
+        setTimeout(() => (isRemoteUpdate.current = false), 500);
+      }
+    });
+
+    socket.on("receive_video_action", (data) => {
+      if (isAdmin || isOutOfSync || !videoRef.current) return;
+
+      isRemoteUpdate.current = true;
+      if (data.type === "play") {
+        videoRef.current.currentTime = data.timestamp;
+        videoRef.current.play().catch(() => {});
+      } else if (data.type === "pause") {
+        videoRef.current.pause();
+      } else if (data.type === "seek") {
+        videoRef.current.currentTime = data.timestamp;
+      }
+      setTimeout(() => (isRemoteUpdate.current = false), 500);
+    });
+
+    socket.on("receive_message", (msg) => {
+      setMessages((prev) => [...prev, msg]);
     });
 
     return () => {
+      socket.off("request_sync_from_host");
+      socket.off("receive_sync_state");
       socket.off("receive_video_action");
       socket.off("receive_message");
-      socket.emit("leave_room", roomId);
     };
-  }, [roomId]);
+  }, [roomId, movie, hasJoined, isAdmin, isOutOfSync]);
 
-  /* ================= 3. USER ACTIONS (Emit Events) ================= */
-  
-  const togglePlay = useCallback(() => {
+  // 3. Handlers
+  const togglePlay = () => {
     const video = videoRef.current;
     if (!video) return;
 
-    // Only emit if UNLOCKED (User action)
-    if (!isRemoteUpdate.current) {
-        if (video.paused) {
-            video.play();
-            setIsPlaying(true);
-            socket.emit("video_action", { roomId, type: "play", timestamp: video.currentTime });
-        } else {
-            video.pause();
-            setIsPlaying(false);
-            socket.emit("video_action", { roomId, type: "pause", timestamp: video.currentTime });
-        }
-    }
-  }, [roomId]);
-
-  // Handle Seeking (Triggered by your Custom Controls changing video.currentTime)
-  const handleSeeked = () => {
-    if (!isRemoteUpdate.current && videoRef.current) {
-        socket.emit("video_action", { roomId, type: "seek", timestamp: videoRef.current.currentTime });
+    if (isAdmin) {
+      if (video.paused) {
+        video.play();
+        socket.emit("video_action", { roomId, type: "play", timestamp: video.currentTime });
+      } else {
+        video.pause();
+        socket.emit("video_action", { roomId, type: "pause", timestamp: video.currentTime });
+      }
+    } else {
+      // Guest: Local control + Detach from host
+      if (video.paused) video.play(); else video.pause();
+      setIsOutOfSync(true);
     }
   };
 
-  /* ================= 4. UI HELPERS ================= */
-  const resetHideTimer = useCallback(() => {
-    setShowControls(true);
-    clearTimeout(hideTimerRef.current);
-    hideTimerRef.current = setTimeout(() => {
-      if (isPlaying) setShowControls(false);
-    }, CONTROLS_HIDE_DELAY);
-  }, [isPlaying]);
+  const handleSeek = (time) => {
+    const video = videoRef.current;
+    if (!video) return;
 
-  const toggleFullscreen = () => {
-    if (!document.fullscreenElement) videoContainerRef.current?.requestFullscreen();
-    else document.exitFullscreen();
+    if (isAdmin) {
+      video.currentTime = time;
+      socket.emit("video_action", { roomId, type: "seek", timestamp: time });
+    } else {
+      video.currentTime = time;
+      setIsOutOfSync(true);
+    }
+  };
+
+  const requestSync = () => {
+    socket.emit("request_sync", { roomId });
   };
 
   const sendMessage = (e) => {
     e.preventDefault();
     if (!newMessage.trim()) return;
-    socket.emit("send_message", {
-        roomId,
-        message: newMessage,
-        user: "User " + Math.floor(Math.random()*100),
-        time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
-    });
+    socket.emit("send_message", { roomId, message: newMessage, user: currentUser?.username || "Guest" });
     setNewMessage("");
   };
 
-  const scrollToBottom = () => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  const copyLink = () => { navigator.clipboard.writeText(window.location.href); toast.success("Link Copied!"); };
-
-  if (loading) return <div className="h-screen bg-black text-white flex items-center justify-center">Loading Party...</div>;
+  // Scroll chat to bottom
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
 
   return (
-    <div className="flex h-screen w-screen bg-black overflow-hidden">
+    <div className="flex h-screen bg-black overflow-hidden relative">
       
-      {/* ===== LEFT: VIDEO AREA (Native Video + Custom Controls) ===== */}
-      <div 
-        ref={videoContainerRef}
-        onMouseMove={resetHideTimer}
-        className={`relative flex-1 bg-black flex items-center justify-center group ${!showControls && "cursor-none"}`}
-      >
+      {/* JOIN OVERLAY */}
+      {!hasJoined && (
+        <div className="absolute inset-0 z-[200] bg-black/90 flex items-center justify-center">
+          <button 
+            onClick={() => setHasJoined(true)} 
+            className="bg-purple-600 hover:bg-purple-700 text-white px-12 py-4 rounded-full font-bold text-xl transition-all"
+          >
+            Enter Watch Party
+          </button>
+        </div>
+      )}
+
+      {/* SYNC BUTTON */}
+      {!isAdmin && isOutOfSync && hasJoined && (
+        <motion.button 
+          initial={{ y: -100 }} animate={{ y: 0 }}
+          onClick={requestSync}
+          className="absolute top-24 left-1/2 -translate-x-1/2 z-[100] bg-white text-black px-6 py-2 rounded-full flex items-center gap-2 font-bold shadow-2xl hover:scale-105 active:scale-95 transition-all pointer-events-auto"
+        >
+          <RefreshCw size={18} className="text-purple-600" /> Sync with Host
+        </motion.button>
+      )}
+
+      <div className="relative flex-1 bg-black flex items-center justify-center">
         <video
-            ref={videoRef}
-            src={movie?.videoUrl}
-            className="w-full h-full object-contain"
-            onClick={togglePlay}
-            onDoubleClick={toggleFullscreen}
-            onTimeUpdate={() => setCurrentTime(videoRef.current?.currentTime || 0)}
-            onLoadedMetadata={() => setDuration(videoRef.current?.duration)}
-            onWaiting={() => setIsBuffering(true)}
-            onPlaying={() => { setIsBuffering(false); setIsPlaying(true); }}
-            onPause={() => setIsPlaying(false)}
-            onSeeked={handleSeeked} // 👈 Critical for syncing seeking
+          ref={videoRef}
+          src={movie?.videoUrl}
+          className="w-full h-full object-contain pointer-events-auto cursor-pointer"
+          onClick={togglePlay}
+          onTimeUpdate={() => setCurrentTime(videoRef.current?.currentTime || 0)}
+          onLoadedMetadata={() => setDuration(videoRef.current?.duration)}
+          onPlay={() => setIsPlaying(true)}
+          onPause={() => setIsPlaying(false)}
         />
+        
+        {/* PLAYER UI LAYERS */}
+        {/* pointer-events-none on container, pointer-events-auto on children */}
+        <div className="absolute inset-0 z-[60] flex flex-col justify-between pointer-events-none">
+          <div className="pointer-events-auto">
+            <PlayerTopBar movie={movie} onBack={() => navigate(-1)} />
+          </div>
+          
+          <div className="flex-grow flex items-center justify-center">
+            <div className="pointer-events-auto">
+              <PlayerCenterControls isAdmin={true} isPlaying={isPlaying} onToggle={togglePlay} />
+            </div>
+          </div>
 
-        {/* Custom Overlays (Reused from Watch.jsx) */}
-        <AnimatePresence>
-            {showControls && (
-                <motion.div 
-                    initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                    className="absolute inset-0 z-50 flex flex-col justify-between pointer-events-none"
-                >
-                    <div className="pointer-events-auto">
-                        <PlayerTopBar movie={movie} onBack={() => navigate(-1)} />
-                    </div>
-                    
-                    <div className="pointer-events-auto flex-grow relative">
-                        {/* Play/Pause Center Button */}
-                        <PlayerCenterControls isPlaying={isPlaying} isBuffering={isBuffering} onToggle={togglePlay} />
-                    </div>
-
-                    <div className="pointer-events-auto px-4 pb-4">
-                        {/* Bottom Bar (Seekbar, Volume, etc) */}
-                        <PlayerBottomControls 
-                            videoRef={videoRef}
-                            isPlaying={isPlaying}
-                            onToggle={togglePlay}
-                            currentTime={currentTime}
-                            duration={duration}
-                            // We hide specific settings for guests to keep it simple, or add a chat toggle
-                            onOpenSettings={() => setShowChat(!showChat)} 
-                        />
-                    </div>
-                </motion.div>
-            )}
-        </AnimatePresence>
+          <div className="px-4 pb-4 pointer-events-auto">
+            <PlayerBottomControls 
+               isAdmin={true} 
+               videoRef={videoRef} 
+               isPlaying={isPlaying} 
+               onToggle={togglePlay}
+               currentTime={currentTime} 
+               duration={duration}
+               onSeek={handleSeek} 
+               onOpenSettings={() => setShowChat(!showChat)} 
+            />
+          </div>
+        </div>
       </div>
 
-      {/* ===== RIGHT: CHAT SIDEBAR (Toggleable) ===== */}
+      {/* CHAT PANEL */}
       <AnimatePresence>
-      {showChat && (
-        <motion.div 
-            initial={{ width: 0, opacity: 0 }} 
-            animate={{ width: 320, opacity: 1 }} 
-            exit={{ width: 0, opacity: 0 }}
-            className="bg-[#101010] border-l border-gray-800 flex flex-col z-50"
-        >
-            {/* Header */}
-            <div className="p-4 border-b border-gray-800 bg-[#161616] flex justify-between items-center text-white">
-                <div className="flex items-center gap-2 font-bold text-purple-400">
-                    <Users size={18} /> Party Chat
+        {showChat && (
+          <motion.div 
+            initial={{ width: 0 }} animate={{ width: 350 }} exit={{ width: 0 }} 
+            className="bg-[#0c0c0c] border-l border-gray-800 flex flex-col z-[70]"
+          >
+            <div className="p-4 border-b border-gray-800 flex justify-between items-center text-white">
+              <span className="flex items-center gap-2 text-purple-400 font-bold"><Users size={18}/> Party Chat</span>
+            </div>
+            <div className="flex-1 overflow-y-auto p-4 space-y-4 scrollbar-hide">
+              {messages.map((msg, i) => (
+                <div key={i} className={`flex flex-col ${msg.user === currentUser?.username ? "items-end" : "items-start"}`}>
+                  <span className="text-[10px] text-gray-500 font-bold">{msg.user}</span>
+                  <p className={`p-2 rounded-lg text-sm mt-1 ${msg.user === currentUser?.username ? "bg-purple-600 text-white" : "bg-[#1a1a1a] text-gray-200"}`}>
+                    {msg.message}
+                  </p>
                 </div>
-                <button onClick={copyLink} className="p-2 hover:bg-gray-800 rounded-full" title="Copy Invite Link">
-                    <Copy size={16} />
-                </button>
+              ))}
+              <div ref={messagesEndRef} />
             </div>
-
-            {/* Messages */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
-                {messages.map((msg, i) => (
-                    <div key={i} className="flex flex-col animate-fade-in">
-                        <div className="flex justify-between text-[10px] text-gray-500 mb-1">
-                            <span className="font-bold text-gray-400">{msg.user}</span>
-                            <span>{msg.time}</span>
-                        </div>
-                        <div className="bg-[#202020] p-2 rounded-lg text-sm text-gray-200 border border-gray-700">
-                            {msg.message}
-                        </div>
-                    </div>
-                ))}
-                <div ref={messagesEndRef} />
-            </div>
-
-            {/* Input */}
-            <form onSubmit={sendMessage} className="p-3 border-t border-gray-800 bg-[#161616] relative">
-                <input 
-                    value={newMessage} 
-                    onChange={e => setNewMessage(e.target.value)}
-                    placeholder="Type a message..."
-                    className="w-full bg-black border border-gray-700 text-white rounded-full py-2 px-4 pr-10 text-sm focus:border-purple-500 outline-none"
-                />
-                <button type="submit" className="absolute right-5 top-5 text-purple-500 hover:text-white transition">
-                    <Send size={16} />
-                </button>
+            <form onSubmit={sendMessage} className="p-4 bg-[#121212] flex gap-2">
+              <input 
+                value={newMessage} 
+                onChange={e => setNewMessage(e.target.value)} 
+                className="flex-1 bg-black border border-gray-800 rounded-full px-4 py-2 text-sm text-white outline-none focus:border-purple-500" 
+                placeholder="Message..."/>
+              <button type="submit" className="text-purple-500 hover:scale-110 transition-transform"><Send size={20}/></button>
             </form>
-        </motion.div>
-      )}
+          </motion.div>
+        )}
       </AnimatePresence>
     </div>
   );

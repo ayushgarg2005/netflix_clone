@@ -81,7 +81,9 @@ const Watch = () => {
   const handleCreateRoom = async () => {
     saveProgress();
     const roomId = nanoid(8);
-    const res=await axios.post("http://localhost:5000/api/room/add", { roomId });
+    const adminId = await axios.get("http://localhost:5000/api/auth/me", { withCredentials: true });
+    console.log("Admin ID:", adminId);
+    const res=await axios.post("http://localhost:5000/api/room/add", { roomId: roomId, movieId: id, adminId: adminId.data.user.id });
     navigate(`/watchparty/${id}?room=${roomId}`);
   };
 
