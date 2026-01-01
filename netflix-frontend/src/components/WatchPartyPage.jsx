@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import axios from "axios";
 import toast from "react-hot-toast";
+import { Loader2, RefreshCw } from "lucide-react"; // Added Icons
 
 import WatchPartyVideo from "../components/WatchPartyVideo";
 import WatchPartyChat from "../components/WatchPartyChat";
@@ -67,30 +68,67 @@ const WatchPartyPage = () => {
     setMessages
   });
 
-  return (
-    <div className="flex h-screen bg-black overflow-hidden relative">
-      {!hasJoined && <JoinOverlay onJoin={() => setHasJoined(true)} />}
+  // Loading State
+  if (!movie || !currentUser) {
+    return (
+      <div className="h-screen w-full bg-[#001E2B] flex flex-col items-center justify-center text-slate-400 gap-4">
+        <Loader2 className="w-12 h-12 text-[#00ED64] animate-spin" />
+        <p className="text-sm uppercase tracking-widest font-mono">Initializing Stream...</p>
+      </div>
+    );
+  }
 
-      {!isAdmin && isOutOfSync && hasJoined && (
-        <SyncButton onSync={socketApi.requestSync} />
+  return (
+    <div className="flex h-screen w-full bg-[#001E2B] text-slate-100 font-sans selection:bg-[#00ED64] selection:text-[#001E2B] overflow-hidden relative">
+      
+      {/* 1. JOIN OVERLAY (Modal) */}
+      {!hasJoined && (
+        <div className="absolute inset-0 z-50 bg-[#001E2B]/90 backdrop-blur-md flex items-center justify-center">
+           <JoinOverlay onJoin={() => setHasJoined(true)} />
+        </div>
       )}
 
-      <WatchPartyVideo
-        movie={movie}
-        videoRef={videoRef}
-        isAdmin={isAdmin}
-        setIsOutOfSync={setIsOutOfSync}
-        socketApi={socketApi}
-        onBack={() => navigate(-1)}
-        toggleChat={() => setShowChat(!showChat)}
-      />
+      {/* 2. SYNC WARNING (Floating) */}
+      {!isAdmin && isOutOfSync && hasJoined && (
+        <div className="absolute top-20 left-1/2 -translate-x-1/2 z-40">
+           <SyncButton onSync={socketApi.requestSync} />
+        </div>
+      )}
 
-      <WatchPartyChat
-        show={showChat}
-        messages={messages}
-        currentUser={currentUser}
-        onSend={socketApi.sendMessage}
-      />
+      {/* 3. MAIN CONTENT GRID */}
+      <main className="flex-1 flex overflow-hidden relative">
+        
+        {/* VIDEO CONTAINER */}
+        <div className={`flex-1 relative bg-black transition-all duration-300 ${showChat ? "mr-0" : "mr-0"}`}>
+           <WatchPartyVideo
+             movie={movie}
+             videoRef={videoRef}
+             isAdmin={isAdmin}
+             setIsOutOfSync={setIsOutOfSync}
+             socketApi={socketApi}
+             onBack={() => navigate(-1)}
+             toggleChat={() => setShowChat(!showChat)}
+           />
+        </div>
+
+        {/* CHAT SIDEBAR (Collapsible) */}
+        <div 
+          className={`
+            border-l border-white/5 bg-[#021019] transition-all duration-300 ease-in-out relative z-30
+            ${showChat ? "w-[350px] translate-x-0" : "w-0 translate-x-full opacity-0"}
+          `}
+        >
+          <div className="h-full w-[350px] absolute right-0 top-0">
+             <WatchPartyChat
+               show={showChat}
+               messages={messages}
+               currentUser={currentUser}
+               onSend={socketApi.sendMessage}
+             />
+          </div>
+        </div>
+
+      </main>
     </div>
   );
 };
