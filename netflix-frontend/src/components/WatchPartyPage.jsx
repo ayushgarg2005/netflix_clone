@@ -2,13 +2,14 @@ import React, { useEffect, useRef, useState } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import axios from "axios";
 import toast from "react-hot-toast";
-import { Loader2, RefreshCw } from "lucide-react"; // Added Icons
+import { Loader2 } from "lucide-react"; 
 
+// Local Components
 import WatchPartyVideo from "../components/WatchPartyVideo";
 import WatchPartyChat from "../components/WatchPartyChat";
 import JoinOverlay from "../components/JoinOverlay";
-import SyncButton from "../components/SyncButton";
-import useWatchPartySocket from "../components/useWatchPartySocket";
+import SyncButton from "../components/SyncButton"; // Ensure this component exists
+import useWatchPartySocket from "../components/useWatchPartySocket"; // Check path
 
 const WatchPartyPage = () => {
   const { id } = useParams();
@@ -18,16 +19,20 @@ const WatchPartyPage = () => {
 
   const videoRef = useRef(null);
 
+  // Data States
   const [movie, setMovie] = useState(null);
   const [currentUser, setCurrentUser] = useState(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [messages, setMessages] = useState([]);
+
+  // Session States
   const [hasJoined, setHasJoined] = useState(false);
+  const [showChat, setShowChat] = useState(true);
+  
+  // --- CRITICAL STATE FOR SYNC LOGIC ---
   const [isOutOfSync, setIsOutOfSync] = useState(false);
 
-  const [messages, setMessages] = useState([]);
-  const [showChat, setShowChat] = useState(true);
-
-  // 🔹 Init session
+  // 1. Init session (Fetch User, Room, Movie, Messages)
   useEffect(() => {
     if (!roomId) return;
 
@@ -49,7 +54,8 @@ const WatchPartyPage = () => {
 
         setMovie(movieRes.data);
         setMessages(msgRes.data);
-      } catch {
+      } catch (error) {
+        console.error("Init Error:", error);
         toast.error("Invalid or expired session");
         navigate("/");
       }
@@ -58,17 +64,19 @@ const WatchPartyPage = () => {
     init();
   }, [roomId, id, navigate]);
 
-  // 🔹 Socket Hook
+  // 2. Socket Hook Integration
+  // We now pass 'isOutOfSync' so the hook knows when to ignore host updates
   const socketApi = useWatchPartySocket({
     roomId,
     videoRef,
     isAdmin,
     hasJoined,
+    isOutOfSync,    // <--- PASSED HERE
     setIsOutOfSync,
     setMessages
   });
 
-  // Loading State
+  // 3. Loading View
   if (!movie || !currentUser) {
     return (
       <div className="h-screen w-full bg-[#001E2B] flex flex-col items-center justify-center text-slate-400 gap-4">
@@ -81,21 +89,23 @@ const WatchPartyPage = () => {
   return (
     <div className="flex h-screen w-full bg-[#001E2B] text-slate-100 font-sans selection:bg-[#00ED64] selection:text-[#001E2B] overflow-hidden relative">
       
-      {/* 1. JOIN OVERLAY (Modal) */}
+      {/* A. JOIN OVERLAY (Modal) */}
       {!hasJoined && (
         <div className="absolute inset-0 z-50 bg-[#001E2B]/90 backdrop-blur-md flex items-center justify-center">
            <JoinOverlay onJoin={() => setHasJoined(true)} />
         </div>
       )}
 
-      {/* 2. SYNC WARNING (Floating) */}
+      {/* B. SYNC WARNING (Floating Button) */}
+      {/* Only visible if NOT admin, HAS joined, and IS out of sync */}
       {!isAdmin && isOutOfSync && hasJoined && (
-        <div className="absolute top-20 left-1/2 -translate-x-1/2 z-40">
+        <div className="absolute bottom-32 right-1/2 translate-x-1/2 md:translate-x-0 md:right-10 z-50 animate-bounce">
+           {/* If you don't have a separate SyncButton component, you can use a standard button here */}
            <SyncButton onSync={socketApi.requestSync} />
         </div>
       )}
 
-      {/* 3. MAIN CONTENT GRID */}
+      {/* C. MAIN CONTENT GRID */}
       <main className="flex-1 flex overflow-hidden relative">
         
         {/* VIDEO CONTAINER */}
@@ -104,7 +114,7 @@ const WatchPartyPage = () => {
              movie={movie}
              videoRef={videoRef}
              isAdmin={isAdmin}
-             setIsOutOfSync={setIsOutOfSync}
+             setIsOutOfSync={setIsOutOfSync} // Pass setter to allow manual drift trigger
              socketApi={socketApi}
              onBack={() => navigate(-1)}
              toggleChat={() => setShowChat(!showChat)}

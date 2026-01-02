@@ -9,7 +9,6 @@ import {
   Maximize,
   Minimize,
   Settings,
-  MoreVertical
 } from "lucide-react";
 
 const SEEK_SECONDS = 10;
@@ -20,6 +19,7 @@ const PlayerBottomControls = ({
   onToggle,
   currentTime,
   duration,
+  onSeek, // <--- We must use this to trigger sync logic
   onOpenSettings,
 }) => {
   const progressRef = useRef(null);
@@ -62,22 +62,28 @@ const PlayerBottomControls = ({
     [currentTime, duration]
   );
 
-  const handleSeek = (e) => {
-    if (!progressRef.current || !videoRef?.current) return;
+  // FIX: Calculate time but delegate the actual action to the parent
+  const handleSeekClick = (e) => {
+    if (!progressRef.current || !onSeek) return;
     
     const rect = progressRef.current.getBoundingClientRect();
-    // Calculate click position relative to width
     const percent = Math.min(Math.max(0, (e.clientX - rect.left) / rect.width), 1);
-    
-    videoRef.current.currentTime = percent * duration;
+    const newTime = percent * duration;
+
+    // Call parent handler to ensure Socket emit / Sync state update
+    onSeek(newTime);
+  };
+
+  // FIX: Helper for Rewind/Forward buttons
+  const handleSkip = (seconds) => {
+    if (!onSeek) return;
+    const newTime = Math.min(Math.max(0, currentTime + seconds), duration);
+    onSeek(newTime);
   };
 
   /* ================= FULLSCREEN LOGIC ================= */
   const toggleFullscreen = async () => {
     if (!videoRef?.current) return;
-    
-    // Usually the wrapper needs to go fullscreen, not just the video element
-    // assuming videoRef.current.parentNode is the wrapper
     const container = videoRef.current.parentElement || videoRef.current;
 
     try {
@@ -93,7 +99,6 @@ const PlayerBottomControls = ({
     }
   };
 
-  // Listen for fullscreen changes (e.g. user presses Esc)
   useEffect(() => {
     const handleFsChange = () => {
       setIsFullscreen(!!document.fullscreenElement);
@@ -108,7 +113,7 @@ const PlayerBottomControls = ({
       {/* 1. PROGRESS BAR CONTAINER */}
       <div 
         className="group relative h-4 flex items-center cursor-pointer mb-4 select-none" 
-        onClick={handleSeek}
+        onClick={handleSeekClick} // Updated Handler
       >
         {/* Background Rail */}
         <div 
@@ -120,12 +125,12 @@ const PlayerBottomControls = ({
             className="h-full bg-[#00ED64] relative transition-all duration-100 ease-linear"
             style={{ width: `${progressPercent}%` }}
           >
-            {/* Scrubber Dot (Glow Effect) */}
+            {/* Scrubber Dot */}
             <div className="absolute right-0 top-1/2 -translate-y-1/2 w-3 h-3 md:w-4 md:h-4 bg-[#00ED64] rounded-full scale-0 group-hover:scale-100 transition-transform shadow-[0_0_15px_rgba(0,237,100,0.8)] z-10" />
           </div>
         </div>
         
-        {/* Hover Highlight (Ghost Bar) */}
+        {/* Hover Highlight */}
         <div className="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-100 rounded-full transition-opacity pointer-events-none" />
       </div>
 
@@ -147,17 +152,17 @@ const PlayerBottomControls = ({
             )}
           </button>
 
-          {/* Seek Buttons (Hidden on small mobile) */}
+          {/* Seek Buttons (Fixed to use onSeek) */}
           <div className="hidden sm:flex items-center gap-3 text-slate-400">
             <button 
-              onClick={() => (videoRef.current.currentTime -= SEEK_SECONDS)} 
+              onClick={() => handleSkip(-SEEK_SECONDS)} 
               className="hover:text-white hover:bg-white/10 p-1.5 rounded-full transition-all"
               title={`Rewind ${SEEK_SECONDS}s`}
             >
               <RotateCcw size={20} />
             </button>
             <button 
-              onClick={() => (videoRef.current.currentTime += SEEK_SECONDS)} 
+              onClick={() => handleSkip(SEEK_SECONDS)} 
               className="hover:text-white hover:bg-white/10 p-1.5 rounded-full transition-all"
               title={`Forward ${SEEK_SECONDS}s`}
             >
