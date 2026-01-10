@@ -1,12 +1,13 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { act, useEffect, useRef, useState } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import axios from "axios";
 import toast from "react-hot-toast";
-import { Loader2 } from "lucide-react"; 
+import { Loader2 } from "lucide-react";
 
 // Local Components
 import WatchPartyVideo from "../components/WatchPartyVideo";
 import WatchPartyChat from "../components/WatchPartyChat";
+import WatchPartyParticipants from "../components/WatchPartyParticipants";
 import JoinOverlay from "../components/JoinOverlay";
 import SyncButton from "../components/SyncButton"; // Ensure this component exists
 import useWatchPartySocket from "../components/useWatchPartySocket"; // Check path
@@ -24,13 +25,17 @@ const WatchPartyPage = () => {
   const [currentUser, setCurrentUser] = useState(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [messages, setMessages] = useState([]);
+  const [adminId, setAdminId] = useState(null);
 
   // Session States
   const [hasJoined, setHasJoined] = useState(false);
   const [showChat, setShowChat] = useState(true);
-  
+
   // --- CRITICAL STATE FOR SYNC LOGIC ---
   const [isOutOfSync, setIsOutOfSync] = useState(false);
+
+  const [participants, setParticipants] = useState([]);
+  const [activeTab, setActiveTab] = useState("chat"); // "chat" | "participants"
 
   // 1. Init session (Fetch User, Room, Movie, Messages)
   useEffect(() => {
@@ -39,17 +44,23 @@ const WatchPartyPage = () => {
     const init = async () => {
       try {
         const [userRes, roomRes] = await Promise.all([
-          axios.get("http://localhost:5000/api/auth/me", { withCredentials: true }),
-          axios.get(`http://localhost:5000/api/room/search/${roomId}`)
+          axios.get("http://localhost:5000/api/auth/me", {
+            withCredentials: true,
+          }),
+          axios.get(`http://localhost:5000/api/room/search/${roomId}`),
         ]);
 
         const userId = String(userRes.data.user.id || userRes.data.user._id);
         setIsAdmin(userId === String(roomRes.data.adminId));
         setCurrentUser(userRes.data.user);
+        setAdminId(roomRes.data.adminId);
+        // console.log("User and Room fetched:", userRes, roomRes);
 
         const [movieRes, msgRes] = await Promise.all([
-          axios.get(`http://localhost:5000/api/movies/${id}`, { withCredentials: true }),
-          axios.get(`http://localhost:5000/api/room/messages/${roomId}`)
+          axios.get(`http://localhost:5000/api/movies/${id}`, {
+            withCredentials: true,
+          }),
+          axios.get(`http://localhost:5000/api/room/messages/${roomId}`),
         ]);
 
         setMovie(movieRes.data);
@@ -71,9 +82,11 @@ const WatchPartyPage = () => {
     videoRef,
     isAdmin,
     hasJoined,
-    isOutOfSync,    // <--- PASSED HERE
+    isOutOfSync, // <--- PASSED HERE
     setIsOutOfSync,
-    setMessages
+    setMessages,
+    setParticipants,
+    currentUser
   });
 
   // 3. Loading View
@@ -81,18 +94,19 @@ const WatchPartyPage = () => {
     return (
       <div className="h-screen w-full bg-[#001E2B] flex flex-col items-center justify-center text-slate-400 gap-4">
         <Loader2 className="w-12 h-12 text-[#00ED64] animate-spin" />
-        <p className="text-sm uppercase tracking-widest font-mono">Initializing Stream...</p>
+        <p className="text-sm uppercase tracking-widest font-mono">
+          Initializing Stream...
+        </p>
       </div>
     );
   }
 
   return (
     <div className="flex h-screen w-full bg-[#001E2B] text-slate-100 font-sans selection:bg-[#00ED64] selection:text-[#001E2B] overflow-hidden relative">
-      
       {/* A. JOIN OVERLAY (Modal) */}
       {!hasJoined && (
         <div className="absolute inset-0 z-50 bg-[#001E2B]/90 backdrop-blur-md flex items-center justify-center">
-           <JoinOverlay onJoin={() => setHasJoined(true)} />
+          <JoinOverlay onJoin={() => setHasJoined(true)} />
         </div>
       )}
 
@@ -100,44 +114,84 @@ const WatchPartyPage = () => {
       {/* Only visible if NOT admin, HAS joined, and IS out of sync */}
       {!isAdmin && isOutOfSync && hasJoined && (
         <div className="absolute bottom-32 right-1/2 translate-x-1/2 md:translate-x-0 md:right-10 z-50 animate-bounce">
-           {/* If you don't have a separate SyncButton component, you can use a standard button here */}
-           <SyncButton onSync={socketApi.requestSync} />
+          {/* If you don't have a separate SyncButton component, you can use a standard button here */}
+          <SyncButton onSync={socketApi.requestSync} />
         </div>
       )}
 
       {/* C. MAIN CONTENT GRID */}
       <main className="flex-1 flex overflow-hidden relative">
-        
         {/* VIDEO CONTAINER */}
-        <div className={`flex-1 relative bg-black transition-all duration-300 ${showChat ? "mr-0" : "mr-0"}`}>
-           <WatchPartyVideo
-             movie={movie}
-             videoRef={videoRef}
-             isAdmin={isAdmin}
-             setIsOutOfSync={setIsOutOfSync} // Pass setter to allow manual drift trigger
-             socketApi={socketApi}
-             onBack={() => navigate(-1)}
-             toggleChat={() => setShowChat(!showChat)}
-           />
+        <div
+          className={`flex-1 relative bg-black transition-all duration-300 ${
+            showChat ? "mr-0" : "mr-0"
+          }`}
+        >
+          <WatchPartyVideo
+            movie={movie}
+            videoRef={videoRef}
+            isAdmin={isAdmin}
+            setIsOutOfSync={setIsOutOfSync} // Pass setter to allow manual drift trigger
+            socketApi={socketApi}
+            onBack={() => navigate(-1)}
+            toggleChat={() => setShowChat(!showChat)}
+          />
         </div>
 
         {/* CHAT SIDEBAR (Collapsible) */}
-        <div 
+        <div
           className={`
-            border-l border-white/5 bg-[#021019] transition-all duration-300 ease-in-out relative z-30
-            ${showChat ? "w-[350px] translate-x-0" : "w-0 translate-x-full opacity-0"}
-          `}
+    border-l border-white/5 bg-[#021019] transition-all duration-300 ease-in-out relative z-30
+    ${showChat ? "w-[350px]" : "w-0 translate-x-full opacity-0"}
+  `}
         >
-          <div className="h-full w-[350px] absolute right-0 top-0">
-             <WatchPartyChat
-               show={showChat}
-               messages={messages}
-               currentUser={currentUser}
-               onSend={socketApi.sendMessage}
-             />
+          <div className="h-full w-[350px] absolute right-0 top-0 flex flex-col">
+            {/* TABS */}
+            <div className="flex border-b border-white/10 bg-[#01141f]">
+              <button
+                onClick={() => setActiveTab("chat")}
+                className={`flex-1 py-3 text-sm font-bold cursor-pointer ${
+                  activeTab === "chat"
+                    ? "text-white border-b-2 border-purple-500"
+                    : "text-slate-400"
+                }`}
+              >
+                Chat
+              </button>
+
+              <button
+                onClick={() => setActiveTab("participants")}
+                className={`flex-1 py-3 text-sm font-bold cursor-pointer ${
+                  activeTab === "participants"
+                    ? "text-white border-b-2 border-purple-500"
+                    : "text-slate-400"
+                }`}
+              >
+                Participants
+              </button>
+            </div>
+
+            {/* CONTENT */}
+            <div className="flex-1 overflow-hidden">
+              {activeTab === "chat" && (
+                <WatchPartyChat
+                  show={showChat}
+                  messages={messages}
+                  currentUser={currentUser}
+                  onSend={socketApi.sendMessage}
+                />
+              )}
+
+              {activeTab === "participants" && (
+                <WatchPartyParticipants
+                  participants={participants}
+                  adminId={adminId}
+                  currentUser={currentUser}
+                />
+              )}
+            </div>
           </div>
         </div>
-
       </main>
     </div>
   );

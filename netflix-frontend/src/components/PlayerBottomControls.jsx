@@ -85,6 +85,7 @@ const PlayerBottomControls = ({
   const toggleFullscreen = async () => {
     if (!videoRef?.current) return;
     const container = videoRef.current.parentElement || videoRef.current;
+    console.log("Toggling fullscreen for",container);
 
     try {
       if (!document.fullscreenElement) {

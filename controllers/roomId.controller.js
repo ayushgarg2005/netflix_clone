@@ -1,11 +1,9 @@
 // controllers/roomId.controller.js
-import { log } from "console";
 import RoomId from "../models/RoomId.model.js";
 import Message from "../models/message.model.js";
 
 export const addRoomId = async (req, res) => {
   try {
-    console.log("Request Body:", req.body);
     const { roomId, movieId, adminId } = req.body;
     const newRoom = new RoomId({ roomId, movieId, adminId });
     await newRoom.save();
@@ -45,5 +43,30 @@ export const getRoomMessages = async (req, res) => {
     res.json(messages);
   } catch (error) {
     res.status(500).json({ message: error.message });
+  }
+};
+
+
+/* ================= GET ALL PARTICIPANTS ================= */
+export const getParticipants = async (req, res) => {
+  try {
+    const { roomId } = req.params;
+
+    const room = await RoomId.findOne({ roomId }).populate(
+      "participants.userId",
+      "name email"
+    );
+
+    if (!room) {
+      return res.status(404).json({ message: "Room not found" });
+    }
+
+    res.json({
+      count: room.participants.length,
+      participants: room.participants,
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
   }
 };

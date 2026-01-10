@@ -2,21 +2,22 @@ import { useEffect, useRef } from "react";
 import io from "socket.io-client";
 import toast from "react-hot-toast";
 
-const socket = io("http://localhost:5000");
-
 const useWatchPartySocket = ({
   roomId,
   videoRef,
   isAdmin,
   hasJoined,
-  isOutOfSync,    // <--- NEW: Accept the boolean value
+  isOutOfSync, // <--- NEW: Accept the boolean value
   setIsOutOfSync,
   setMessages,
+  setParticipants,
+  currentUser,
 }) => {
   const isRemoteUpdate = useRef(false);
-  
+
   // Keep a Ref of the sync state so the socket listener always sees the latest value
   const isOutOfSyncRef = useRef(isOutOfSync);
+  const socketRef = useRef(null);
   useEffect(() => {
     isOutOfSyncRef.current = isOutOfSync;
   }, [isOutOfSync]);
@@ -25,7 +26,19 @@ const useWatchPartySocket = ({
   useEffect(() => {
     if (!roomId || !hasJoined) return;
 
-    socket.emit("join_room", roomId);
+    // ✅ CREATE SOCKET HERE
+    const socket = io("http://localhost:5000", {
+      withCredentials: true,
+    });
+
+    socketRef.current = socket;
+
+    socket.emit("join_room", 
+      {
+        roomId,
+        userId: currentUser?.id,
+      }
+    );
 
     socket.on("request_sync_from_host", ({ requesterId }) => {
       if (!isAdmin || !videoRef.current) return;
@@ -39,11 +52,13 @@ const useWatchPartySocket = ({
     socket.on("receive_sync_state", (data) => {
       if (!videoRef.current) return;
       isRemoteUpdate.current = true;
-      
+
       // Force sync (This always runs because it's a manual "Sync with Host" request)
       videoRef.current.currentTime = data.timestamp;
-      data.isPlaying ? videoRef.current.play().catch(() => {}) : videoRef.current.pause();
-      
+      data.isPlaying
+        ? videoRef.current.play().catch(() => {})
+        : videoRef.current.pause();
+
       toast.success("Synced with host");
       setIsOutOfSync(false);
       setTimeout(() => (isRemoteUpdate.current = false), 500);
@@ -51,8 +66,8 @@ const useWatchPartySocket = ({
 
     socket.on("receive_video_action", (data) => {
       if (isAdmin || !videoRef.current) return;
-      
-      // CRITICAL CHANGE: 
+
+      // CRITICAL CHANGE:
       // If user is out of sync, ignore ALL host actions (Play/Pause/Seek).
       // They are in their own timeline now.
       if (isOutOfSyncRef.current) return;
@@ -60,7 +75,10 @@ const useWatchPartySocket = ({
       isRemoteUpdate.current = true;
 
       // Sync time if needed
-      if (data.timestamp !== undefined && Math.abs(videoRef.current.currentTime - data.timestamp) > 0.5) {
+      if (
+        data.timestamp !== undefined &&
+        Math.abs(videoRef.current.currentTime - data.timestamp) > 0.5
+      ) {
         videoRef.current.currentTime = data.timestamp;
       }
 
@@ -75,9 +93,17 @@ const useWatchPartySocket = ({
       setMessages((prev) => [...prev, msg])
     );
 
-    return () => socket.removeAllListeners();
-  }, [roomId, hasJoined, isAdmin, setIsOutOfSync, setMessages, videoRef]);
+    socket.on("participants_update", (list) => {
+      setParticipants(list);
+    });
 
+    return () => {
+      socket.emit("leave_room", roomId);
+      socket.off("participants_update");
+      socket.disconnect();
+      socket.removeAllListeners();
+    };
+  }, [roomId, hasJoined, isAdmin, setIsOutOfSync, setMessages, videoRef]);
 
   // --- 2. Drift Detection ---
   useEffect(() => {
@@ -92,7 +118,7 @@ const useWatchPartySocket = ({
 
     videoEl.addEventListener("seeking", handleManualInteraction);
     // Optional: You can also add 'pause' here if you want pausing to trigger desync immediately
-    // videoEl.addEventListener("pause", handleManualInteraction); 
+    // videoEl.addEventListener("pause", handleManualInteraction);
 
     return () => {
       videoEl.removeEventListener("seeking", handleManualInteraction);
@@ -103,15 +129,17 @@ const useWatchPartySocket = ({
   return {
     emitAction: (payload) => {
       if (videoRef.current) {
-         socket.emit("video_action", { 
-           roomId, 
-           timestamp: videoRef.current.currentTime, 
-           ...payload 
-         });
+        const socket = socketRef.current;
+        socket.emit("video_action", {
+          roomId,
+          timestamp: videoRef.current.currentTime,
+          ...payload,
+        });
       }
     },
-    requestSync: () => socket.emit("request_sync", { roomId }),
-    sendMessage: (msg) => socket.emit("send_message", { roomId, ...msg }),
+    requestSync: () => socketRef.current?.emit("request_sync", { roomId }),
+    sendMessage: (msg) =>
+      socketRef.current?.emit("send_message", { roomId, ...msg }),
   };
 };
 

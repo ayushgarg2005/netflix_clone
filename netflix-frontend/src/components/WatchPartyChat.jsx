@@ -73,7 +73,7 @@ const WatchPartyChat = ({ show, messages, currentUser, onSend }) => {
   const submit = (e) => {
     e.preventDefault();
     if (!text.trim()) return;
-    onSend({ message: text, user: currentUser?.username || "Guest" });
+    onSend({ message: text, user: currentUser.name || "Guest" });
     setText("");
   };
 
@@ -107,7 +107,7 @@ const WatchPartyChat = ({ show, messages, currentUser, onSend }) => {
                 </div>
             ) : (
                 messages.map((m, i) => {
-                  const isMe = m.user === currentUser?.username;
+                  const isMe = m.user === currentUser?.name;
                   return (
                     <motion.div 
                         initial={{ opacity: 0, y: 10 }}

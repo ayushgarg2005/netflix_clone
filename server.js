@@ -3,7 +3,7 @@ import dotenv from "dotenv";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 import { createServer } from "http"; // 1. REQUIRED: Node's native HTTP server
-import { Server } from "socket.io";  // 2. REQUIRED: Socket.io library
+import { Server } from "socket.io"; // 2. REQUIRED: Socket.io library
 
 import connectDB from "./ConnectDB/mongodb.js";
 import authRoutes from "./routes/auth.route.js";
@@ -11,6 +11,7 @@ import movieRoutes from "./routes/movie.route.js";
 import watchProgressRoutes from "./routes/watchProgress.route.js";
 import roomIdRoutes from "./routes/roomId.route.js";
 import Message from "./models/message.model.js";
+import RoomId from "./models/RoomId.model.js";
 
 dotenv.config();
 connectDB();
@@ -27,11 +28,9 @@ const io = new Server(httpServer, {
   cors: {
     origin: "http://localhost:5173", // Your Frontend URL (React/Vite)
     methods: ["GET", "POST"],
-    credentials: true                // Allow cookies/headers
-  }
+    credentials: true, // Allow cookies/headers
+  },
 });
-
-console.log("API Key:", process.env.CLOUDINARY_API_KEY);
 
 /* ================= MIDDLEWARES ================= */
 app.use(
@@ -57,21 +56,41 @@ app.use("/api/room", roomIdRoutes);
    ========================================================================== */
 /* ⚡ SOCKET.IO - WATCH PARTY LOGIC ⚡ */
 // Assuming you have your Message model imported
-// const Message = require("./models/Message"); 
+// const Message = require("./models/Message");
 
 io.on("connection", (socket) => {
-  console.log(`🟢 Connected: ${socket.id}`);
-
   // 1. JOIN ROOM
-  socket.on("join_room", (roomId) => {
+  socket.on("join_room", async ({ roomId, userId }) => {
     socket.join(roomId);
-    console.log(`👥 ${socket.id} joined room: ${roomId}`);
-    
+
+    await RoomId.findOneAndUpdate(
+      { roomId },
+      {
+        $addToSet: {
+          participants: {
+            userId,
+            socketId: socket.id,
+          },
+        },
+      },
+      { new: true }
+    );
+
+    // 👇 IMPORTANT: populate user details
+    const room = await RoomId.findOne({ roomId }).populate(
+      "participants.userId",
+      "name email"
+    );
+
+    io.to(roomId).emit("participants_update", room.participants);
+
     /**
      * When a new user joins, we automatically ask the host for the current state
      * so the new user starts at the right time.
      */
-    socket.to(roomId).emit("request_sync_from_host", { requesterId: socket.id });
+    socket
+      .to(roomId)
+      .emit("request_sync_from_host", { requesterId: socket.id });
   });
 
   // 2. ADMIN VIDEO ACTIONS (Play, Pause, Seek)
@@ -79,24 +98,25 @@ io.on("connection", (socket) => {
     const { roomId, type, timestamp } = data;
     /**
      * We broadcast the admin's action to all other users in the room.
-     * The frontend logic handles the 'isOutOfSync' check to see if the 
+     * The frontend logic handles the 'isOutOfSync' check to see if the
      * guest should follow this command or ignore it.
      */
     socket.to(roomId).emit("receive_video_action", {
       type,
       timestamp,
-      senderId: socket.id
+      senderId: socket.id,
     });
   });
 
   // 3. MANUAL SYNC REQUEST (Triggered by Guest "Sync" button)
   socket.on("request_sync", ({ roomId }) => {
-    console.log(`🔄 Sync requested by ${socket.id} in room ${roomId}`);
     /**
-     * We broadcast this to the room. 
+     * We broadcast this to the room.
      * Only the user who is 'isAdmin' in the frontend will respond to this event.
      */
-    socket.to(roomId).emit("request_sync_from_host", { requesterId: socket.id });
+    socket
+      .to(roomId)
+      .emit("request_sync_from_host", { requesterId: socket.id });
   });
 
   // 4. HOST SENDING STATE (Host response to Sync Request)
@@ -108,14 +128,17 @@ io.on("connection", (socket) => {
      */
     io.to(requesterId).emit("receive_sync_state", {
       timestamp,
-      isPlaying
+      isPlaying,
     });
   });
 
   // 5. CHAT MESSAGING
   socket.on("send_message", async (data) => {
     const { roomId, message, user } = data;
-    const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const time = new Date().toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
 
     try {
       // Save message to DB
@@ -123,7 +146,7 @@ io.on("connection", (socket) => {
         roomId,
         user,
         message,
-        time
+        time,
       });
       await newMessage.save();
 
@@ -135,8 +158,16 @@ io.on("connection", (socket) => {
   });
 
   // 6. DISCONNECT
-  socket.on("disconnect", () => {
-    console.log(`🔴 Disconnected: ${socket.id}`);
+  socket.on("disconnect", async () => {
+    const room = await RoomId.findOneAndUpdate(
+      { "participants.socketId": socket.id },
+      { $pull: { participants: { socketId: socket.id } } },
+      { new: true }
+    ).populate("participants.userId", "name email");
+
+    if (room) {
+      io.to(room.roomId).emit("participants_update", room.participants);
+    }
   });
 });
 
