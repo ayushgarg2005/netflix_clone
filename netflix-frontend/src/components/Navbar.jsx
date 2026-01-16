@@ -4,7 +4,7 @@ import { ChevronDown } from "lucide-react";
 import Logo from "./Logo";
 import DesktopNav from "./DesktopNav";
 import SearchBar from "./SearchBar";
-import NotificationBell from "./NotificationBell";
+// import NotificationBell from "./NotificationBell";
 import ProfileDropdown from "./ProfileDropdown";
 import MobileMenu from "./MobileMenu";
 
@@ -38,7 +38,7 @@ const Navbar = () => {
           {/* Vertical Divider */}
           <div className="w-px h-6 bg-slate-700/50 hidden md:block" /> 
           
-          <NotificationBell />
+          {/* <NotificationBell /> */}
           <ProfileDropdown />
         </div>
       </div>

@@ -4,7 +4,6 @@ export const NAV_LINKS = [
   { name: "Home", path: "/" },
   { name: "Watch Party", path: "/watchParty" },
   { name: "Movies", path: "/movies" },
-  { name: "New & Popular", path: "/latest" },
   { name: "My List", path: "/my-list" },
 ];
 
