@@ -11,6 +11,7 @@ import Profile from "./components/Profile";
 import Account from "./components/Account";
 import LandingPage from "./components/LandingPage";
 import WatchPartyPage from "./components/WatchPartyPage";
+import Movies from "./components/Movies";
 import { Toaster } from "react-hot-toast";
 function App() {
   return (
@@ -27,7 +28,8 @@ function App() {
           <Route path="/movie/:id" element={<ProtectedRoute><MovieDetails /></ProtectedRoute>} />
           <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
           <Route path="/account" element={<ProtectedRoute><Account /></ProtectedRoute>} />
-          <Route path="/watchparty/:id" element={<WatchPartyPage />} />
+          <Route path="/watchparty/:id" element={<ProtectedRoute><WatchPartyPage /></ProtectedRoute>} />
+          <Route path="/movies" element={<ProtectedRoute><Movies /></ProtectedRoute>} />
         </Routes>
       </AuthProvider>
     </BrowserRouter>
