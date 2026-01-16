@@ -86,7 +86,7 @@ const WatchPartyPage = () => {
     setIsOutOfSync,
     setMessages,
     setParticipants,
-    currentUser
+    currentUser,
   });
 
   // 3. Loading View
@@ -135,6 +135,7 @@ const WatchPartyPage = () => {
             socketApi={socketApi}
             onBack={() => navigate(-1)}
             toggleChat={() => setShowChat(!showChat)}
+            roomId={roomId}
           />
         </div>
 
