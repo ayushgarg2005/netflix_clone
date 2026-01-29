@@ -46,7 +46,7 @@ const Signin = () => {
 
     console.log(res);
     // ✅ Navigate ONLY on successful login
-    if (res.status==200) {
+    if (res.status===200) {
       navigate("/browse", { replace: true });
     }
 
