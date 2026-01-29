@@ -3,9 +3,14 @@ import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import axios from "axios";
 import { Eye, EyeOff, Mail, Lock, ArrowRight, CheckCircle2, AlertCircle, Sparkles } from "lucide-react";
+// 👇 1. IMPORT USEAUTH
+import { useAuth } from "../Authentication/AuthContext";
 
 const Signin = () => {
   const navigate = useNavigate();
+  // 👇 2. GET CHECKAUTH FUNCTION
+  const { checkAuth } = useAuth();
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [form, setForm] = useState({ email: "", password: "" });
@@ -16,54 +21,59 @@ const Signin = () => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  const handleSignin = async () => {
-  // 1. Client-side validation
-  if (!form.email || !form.password) {
-    setError("Please enter your email and password.");
-    return;
-  }
+  const handleSignin = async (e) => {
+    // Prevent form submission refresh if used in a form tag
+    if (e && e.preventDefault) e.preventDefault();
 
-  const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  if (!emailPattern.test(form.email)) {
-    setError("Please enter a valid email address.");
-    return;
-  }
+    if (!form.email || !form.password) {
+      setError("Please enter your email and password.");
+      return;
+    }
 
-  try {
-    setLoading(true);
-    setError("");
+    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailPattern.test(form.email)) {
+      setError("Please enter a valid email address.");
+      return;
+    }
 
-    const res = await axios.post(
-      "http://localhost:5000/api/auth/login",
-      {
-        email: form.email,
-        password: form.password,
-      },
-      {
-        withCredentials: true, // IMPORTANT for cookies
+    try {
+      setLoading(true);
+      setError("");
+
+      const res = await axios.post(
+        "http://localhost:5000/api/auth/login",
+        {
+          email: form.email,
+          password: form.password,
+        },
+        {
+          withCredentials: true, // IMPORTANT for cookies
+        }
+      );
+
+      // ✅ 3. HANDLE SUCCESS WITH CONTEXT UPDATE
+      if (res.status === 200 || res.status === 201) {
+        console.log("Login success, updating auth context...");
+        
+        // Wait for context to fetch user data
+        await checkAuth(); 
+        
+        // Navigate
+        navigate("/browse", { replace: true });
       }
-    );
 
-    console.log(res);
-    // ✅ Navigate ONLY on successful login
-    if (res.status===200) {
-      navigate("/browse", { replace: true });
+    } catch (err) {
+      if (err.response) {
+        setError(err.response.data.message || "Invalid credentials.");
+      } else {
+        setError("Unable to connect to server. Try again later.");
+      }
+    } finally {
+      setLoading(false);
     }
+  };
 
-  } catch (err) {
-    // ❌ Backend error handling
-    if (err.response) {
-      setError(err.response.data.message);
-    } else {
-      setError("Unable to connect to server. Try again later.");
-    }
-  } finally {
-    setLoading(false);
-  }
-};
-
-
-  // Animation Variants
+  // Animation Variants (Kept same)
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: { opacity: 1, transition: { staggerChildren: 0.1 } }
@@ -77,14 +87,14 @@ const Signin = () => {
   return (
     <div className="h-screen w-full relative bg-[#001E2B] text-slate-100 font-sans selection:bg-[#00ED64] selection:text-[#001E2B] overflow-hidden flex flex-col">
       
-      {/* 1. TECHNICAL BACKGROUND (Consistent with Signup) */}
+      {/* 1. TECHNICAL BACKGROUND */}
       <div className="absolute inset-0 z-0 pointer-events-none">
         <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:40px_40px] [mask-image:radial-gradient(ellipse_at_center,black_40%,transparent_100%)]" />
         <div className="absolute top-[-20%] left-[-10%] w-[600px] h-[600px] rounded-full bg-[#00ED64] opacity-[0.05] blur-[120px]" />
         <div className="absolute bottom-[-20%] right-[-10%] w-[500px] h-[500px] rounded-full bg-[#001E2B] border border-[#00ED64]/20 opacity-40 blur-[80px]" />
       </div>
 
-      {/* 2. HEADER - Fixed Height */}
+      {/* 2. HEADER */}
       <nav className="relative z-50 h-16 px-6 md:px-12 flex justify-between items-center shrink-0">
         <div className="flex items-center gap-2 cursor-pointer group" onClick={() => navigate("/")}>
           <div className="w-8 h-8 bg-[#00ED64] rounded-lg flex items-center justify-center text-[#001E2B] font-bold shadow-[0_0_15px_rgba(0,237,100,0.3)] transition-shadow group-hover:shadow-[0_0_20px_rgba(0,237,100,0.5)]">
@@ -105,11 +115,11 @@ const Signin = () => {
         </div>
       </nav>
 
-      {/* 3. MAIN CONTENT - Centered & Compact */}
+      {/* 3. MAIN CONTENT */}
       <div className="relative z-10 flex-grow flex items-center justify-center p-4 lg:p-6">
         <div className="w-full max-w-5xl grid lg:grid-cols-2 gap-12 lg:gap-24 items-center">
           
-          {/* LEFT SECTION: Contextual Marketing */}
+          {/* LEFT SECTION */}
           <motion.div 
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
@@ -194,14 +204,14 @@ const Signin = () => {
 
                 {/* Password */}
                 <motion.div variants={itemVariants} className="group">
-                   <div className="flex justify-between items-center mb-1.5">
-                    <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wide">
+                    <div className="flex justify-between items-center mb-1.5">
+                     <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wide">
                         Password
-                    </label>
-                    <button className="text-[10px] text-[#00ED64] hover:underline font-medium">
+                     </label>
+                     <button className="text-[10px] text-[#00ED64] hover:underline font-medium">
                         Forgot Password?
-                    </button>
-                   </div>
+                     </button>
+                    </div>
                   <div className="relative">
                     <input
                       name="password"
@@ -210,7 +220,7 @@ const Signin = () => {
                       onChange={handleChange}
                       className={`w-full pl-10 pr-10 py-3 rounded-lg bg-[#001E2B] border ${error ? 'border-red-500/50 focus:border-red-500' : 'border-slate-600 focus:border-[#00ED64]'} text-white focus:ring-1 focus:ring-[#00ED64] transition-all outline-none text-sm placeholder:text-slate-500`}
                     />
-                     <Lock size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-[#00ED64] transition-colors" />
+                      <Lock size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-[#00ED64] transition-colors" />
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}

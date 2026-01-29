@@ -7,7 +7,7 @@ const ProtectedRoute = ({ children }) => {
   if (loading) return <div>Loading...</div>;
 
   if (!user) {
-    return <Navigate to="/signup" replace />;
+    return <Navigate to="/signin" replace />;
   }
 
   return children;
